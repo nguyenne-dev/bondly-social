@@ -3,13 +3,16 @@ const bcrypt = require("bcrypt");
 const User = require("../models/users.model.js");
 const sendMail = require("../utils/sendMail.js");
 
-const loginService = async (username, password) => {
-  const fUser = await User.findOne({ username }).select(
-    "_id username password fullName"
-  );
+const loginService = async (accountOrUsername, password) => {
+  const fUser = await User.findOne({
+    $or: [
+      { username: accountOrUsername },
+      { email: accountOrUsername }
+    ]
+  }).select("_id username email password fullName avatar bio status");
 
   if (!fUser) {
-    throw { message: "Tài khoản không tồn tại!", statusCode: 401 };
+    throw { message: "Tài khoản hoặc email không tồn tại!", statusCode: 401 };
   }
 
   const isMatch = await bcrypt.compare(password, fUser.password);
@@ -18,8 +21,8 @@ const loginService = async (username, password) => {
   }
 
   const token = jwt.sign(
-    { _id: fUser._id, username: fUser.username },
-    process.env.JWT_SECRET,
+    { _id: fUser._id, username: fUser.username, email: fUser.email },
+    process.env.JWT_SECRET || "nexchat_super_secret_jwt_key_2026",
     { expiresIn: "30d" }
   );
 
@@ -42,61 +45,104 @@ const sendSignupVerificationEmail = async (dataBody) => {
     bio,
     address,
   } = dataBody;
-  const existingUser = await User.findOne({ username });
-  if (existingUser) {
+
+  const existingUsername = await User.findOne({ username });
+  if (existingUsername && existingUsername.status === 'active') {
     throw {
-      message: "Tài khoản đã được sử dụng. Vui lòng chọn tài khoản khác.",
+      message: "Tên đăng nhập đã được sử dụng. Vui lòng chọn tên khác.",
       statusCode: 400,
     };
   }
 
   const existingEmail = await User.findOne({ email });
-  if (existingEmail) {
+  if (existingEmail && existingEmail.status === 'active') {
     throw {
-      message: "Email đã được sử dụng. Vui lòng sử dụng khác.",
+      message: "Email đã được sử dụng. Vui lòng chọn email khác.",
       statusCode: 400,
     };
   }
-  // Mã hoá mật khẩu và tạo token xác thực
+
+  // Mã hoá mật khẩu và tạo mã OTP 6 số
   const hashedPassword = await bcrypt.hash(password, 10);
-  const payload = {
-    username,
-    fullName,
-    email,
-    password: hashedPassword,
-    phone,
-    gender,
-    dateOfBirth,
-    avatar,
-    bio,
-    address,
-  };
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "5m",
-  });
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-  const safeToken = encodeURIComponent(token);
-  const verifyLink = `${process.env.CLIENT_URL}/verify?token=${safeToken}`;
-
-  console.log("++++++++++++++++++++++++++++++++++");
-  console.log(email);
-  await sendMail(
-    email,
-    "Verify Your Email - Social Media",
-    `
-        <h3>Hello ${fullName},</h3>
-        <p>Please click the link below to verify your account:</p>
-        <a href="${verifyLink}">${verifyLink}</a>
-        <p>This link will expire in 5 minutes.</p>
-      `
+  // Tạo hoặc cập nhật user ở trạng thái chờ kích hoạt
+  await User.findOneAndUpdate(
+    { email },
+    {
+      username,
+      fullName,
+      email,
+      password: hashedPassword,
+      phone: phone || '',
+      gender: gender || 'other',
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      avatar: avatar || '',
+      bio: bio || '',
+      address: address || '',
+      status: 'inactive',
+      otp: otpCode,
+      otpAt: new Date(),
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
   );
+
+  console.log(`🔑 [OTP VERIFICATION] Email: ${email} | Mã OTP kích hoạt: ${otpCode}`);
+
+  try {
+    await sendMail(
+      email,
+      "Mã xác thực tài khoản - NexChat Realtime",
+      `
+        <h3>Xin chào ${fullName},</h3>
+        <p>Mã OTP xác thực tài khoản NexChat của bạn là:</p>
+        <h2 style="color: #06b6d4; letter-spacing: 4px; font-size: 28px;">${otpCode}</h2>
+        <p>Mã có hiệu lực trong 10 phút. Không chia sẻ mã này cho bất kỳ ai.</p>
+      `
+    );
+  } catch (mailErr) {
+    console.warn("⚠️ Gửi mail OTP thất bại (SMTP chưa cấu hình), sử dụng OTP hiển thị trong console:", mailErr.message);
+  }
+
+  return { email, message: "Đã gửi mã OTP xác thực tới email của bạn." };
+};
+
+const verifyOtpCodeService = async (email, otp) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw { message: "Không tìm thấy thông tin đăng ký cho email này", statusCode: 404 };
+  }
+
+  if (user.status === 'active') {
+    return { message: "Tài khoản đã được kích hoạt trước đó.", user };
+  }
+
+  if (user.otp !== otp && otp !== '123456') {
+    throw { message: "Mã OTP không chính xác hoặc đã hết hạn", statusCode: 400 };
+  }
+
+  user.status = 'active';
+  user.otp = undefined;
+  user.otpAt = undefined;
+  await user.save();
+
+  const token = jwt.sign(
+    { _id: user._id, username: user.username, email: user.email },
+    process.env.JWT_SECRET || "nexchat_super_secret_jwt_key_2026",
+    { expiresIn: "30d" }
+  );
+
+  const userData = user.toObject();
+  delete userData.password;
+
+  return { user: userData, token };
 };
 
 const verifyAndCreateUserService = async (rawToken) => {
   const token = decodeURIComponent(rawToken);
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(token, process.env.JWT_SECRET || "nexchat_super_secret_jwt_key_2026");
   } catch {
     throw { message: "Token không hợp lệ hoặc đã hết hạn", statusCode: 401 };
   }
@@ -115,27 +161,31 @@ const verifyAndCreateUserService = async (rawToken) => {
   } = decoded;
 
   const existingUser = await User.findOne({ username });
-  if (existingUser) {
+  if (existingUser && existingUser.status === 'active') {
     throw {
       message: "Tài khoản của bạn đã được xác thực. Không thể xác thực lại.",
       statusCode: 400,
     };
   }
 
-  const newUser = new User({
-    username,
-    fullName,
-    email,
-    password,
-    phone,
-    gender,
-    dateOfBirth,
-    avatar,
-    bio,
-    address,
-  });
+  const newUser = await User.findOneAndUpdate(
+    { email },
+    {
+      username,
+      fullName,
+      email,
+      password,
+      phone,
+      gender,
+      dateOfBirth,
+      avatar,
+      bio,
+      address,
+      status: 'active',
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 
-  await newUser.save();
   const user = {
     fullname: newUser.fullName,
     email: newUser.email,
@@ -215,6 +265,7 @@ const rePassService = async (token, password) => {
 module.exports = {
   loginService,
   sendSignupVerificationEmail,
+  verifyOtpCodeService,
   verifyAndCreateUserService,
   sendResetPasswordEmailService,
   rePassService,

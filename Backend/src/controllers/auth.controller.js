@@ -2,6 +2,7 @@ const { responseNG, responseOK } = require("../utils/respone.util.js");
 const {
   loginService,
   sendSignupVerificationEmail,
+  verifyOtpCodeService,
   verifyAndCreateUserService,
   sendResetPasswordEmailService,
   rePassService,
@@ -9,15 +10,16 @@ const {
 
 const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, account, email, password } = req.body;
+    const loginIdentifier = account || username || email;
 
     // Validate cơ bản
-    if (!username || !password) {
-      return responseNG(res, "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
+    if (!loginIdentifier || !password) {
+      return responseNG(res, "Vui lòng nhập đầy đủ tên đăng nhập/email và mật khẩu.", 400);
     }
 
     // Gọi service
-    const data = await loginService(username, password);
+    const data = await loginService(loginIdentifier.trim(), password);
 
     // Trả cookie token
     res.cookie("token", data.token, {
@@ -50,18 +52,9 @@ const validateRegister = ({
   username,
   email,
   password,
-  gender,
-  dateOfBirth,
 }) => {
-  if (
-    !fullName ||
-    !username ||
-    !email ||
-    !password ||
-    !gender ||
-    !dateOfBirth
-  ) {
-    return "Vui lòng điền đầy đủ trường dữ liệu bắt buộc.";
+  if (!fullName || !username || !email || !password) {
+    return "Vui lòng điền đầy đủ trường dữ liệu bắt buộc (Họ tên, username, email, mật khẩu).";
   }
 
   if (!isValidEmail(email)) {
@@ -71,12 +64,6 @@ const validateRegister = ({
   if (password.length < 6) {
     return "Mật khẩu tối thiểu 6 ký tự";
   }
-  if (dateOfBirth) {
-    const dob = new Date(dateOfBirth);
-    if (isNaN(dob.getTime())) {
-      return "Ngày sinh không hợp lệ";
-    }
-  }
 
   return null;
 };
@@ -84,24 +71,41 @@ const validateRegister = ({
 // Gửi mail xác nhận khi đăng ký
 const sendVerifyMail = async (req, res) => {
   try {
-    //  Validate input
     const dataBody = req.body;
     const err = validateRegister(dataBody);
     if (err) {
-      return responseNG(res, err);
+      return responseNG(res, err, 400);
     }
 
-    // Gọi service
     const data = await sendSignupVerificationEmail(dataBody);
 
     return responseOK(
       res,
-      "Đã gửi liên kết xác thực tới địa chỉ email: " +
-        req.body.email +
-        " vui lòng kiếm tra thư."
+      "Đã gửi mã OTP xác thực tới địa chỉ email: " + req.body.email + ". Vui lòng kiểm tra thư.",
+      data
     );
   } catch (err) {
     console.error("Error sending verification email:", err);
+    return responseNG(
+      res,
+      err.message || "Server error",
+      err.statusCode || 500
+    );
+  }
+};
+
+// Xác thực bằng OTP 6 số
+const verifyOtpCode = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return responseNG(res, "Vui lòng cung cấp email và mã OTP", 400);
+    }
+
+    const data = await verifyOtpCodeService(email.trim(), otp.trim());
+    return responseOK(res, "Xác thực tài khoản thành công!", data);
+  } catch (err) {
+    console.error("OTP verification failed:", err);
     return responseNG(
       res,
       err.message || "Server error",
@@ -177,6 +181,7 @@ const rePass = async (req, res) => {
 module.exports = {
   login,
   sendVerifyMail,
+  verifyOtpCode,
   verifyAndCreateUser,
   sendResetPasswordEmail,
   rePass,

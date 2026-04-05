@@ -3,13 +3,23 @@ const Message = require('../models/message.model');
 const User = require('../models/users.model');
 
 class ChatService {
-  // Lấy hoặc tạo mới cuộc hội thoại giữa 2 user
-  async getOrCreateConversation(userId, partnerId) {
-    let conversation = await Conversation.findOne({
+  // Tìm cuộc hội thoại giữa 2 user nếu đã tồn tại
+  async findConversation(userId, partnerId) {
+    const conversation = await Conversation.findOne({
       participants: { $all: [userId, partnerId], $size: 2 },
     })
-      .populate('participants', 'username fullName avatar status')
-      .populate('lastMessage');
+      .populate('participants', 'username fullName avatar status bio')
+      .populate({
+        path: 'lastMessage',
+        populate: { path: 'senderId', select: 'username fullName avatar' },
+      });
+
+    return conversation;
+  }
+
+  // Lấy hoặc tạo mới cuộc hội thoại giữa 2 user
+  async getOrCreateConversation(userId, partnerId) {
+    let conversation = await this.findConversation(userId, partnerId);
 
     if (!conversation) {
       conversation = await Conversation.create({
@@ -18,19 +28,20 @@ class ChatService {
       });
       conversation = await Conversation.findById(conversation._id).populate(
         'participants',
-        'username fullName avatar status'
+        'username fullName avatar status bio'
       );
     }
 
     return conversation;
   }
 
-  // Lấy danh sách tất cả các cuộc trò chuyện của user
+  // Lấy danh sách tất cả các cuộc trò chuyện của user (chỉ lấy những cuộc trò chuyện đã có tin nhắn)
   async getUserConversations(userId) {
     const conversations = await Conversation.find({
       participants: userId,
+      lastMessage: { $exists: true, $ne: null },
     })
-      .populate('participants', 'username fullName avatar status')
+      .populate('participants', 'username fullName avatar status bio')
       .populate({
         path: 'lastMessage',
         populate: { path: 'senderId', select: 'username fullName avatar' },

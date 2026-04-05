@@ -22,7 +22,7 @@ router.post('/messages', chatController.sendMessage);
 router.put('/messages/read/:conversationId', chatController.markAsRead);
 
 // 6. Thu hồi tin nhắn
-exports = router.put('/messages/recall/:messageId', chatController.recallMessage);
+router.put('/messages/recall/:messageId', chatController.recallMessage);
 
 // 7. Thả cảm xúc emoji
 router.post('/messages/react/:messageId', chatController.reactToMessage);

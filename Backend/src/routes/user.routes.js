@@ -4,13 +4,23 @@ const checkAuth = require("../middlewares/auth.middleware");
 
 const userController = require("../controllers/users.controller");
 
-router.get("/me", checkAuth, userController.getMe); // Lấy thông tin chính mình check theo token
-router.get("/all", checkAuth, userController.getAllUser); // Lấy tất cả người dùng
+// Lấy thông tin user hiện tại (hỗ trợ cả /me và /profile)
+router.get("/me", checkAuth, userController.getMe);
+router.get("/profile", checkAuth, userController.getMe);
+router.get("/all", checkAuth, userController.getAllUser);
 
-router.post("/me/update", checkAuth,userController.updateInfo) // Cập nhật thông tin
-router.post("/me/change-pass", checkAuth,userController.changePassword) // Cập nhật mật khẩu
+// Cập nhật thông tin profile
+router.post("/me/update", checkAuth, userController.updateInfo);
+router.put("/profile", checkAuth, userController.updateInfo);
+router.post("/me/change-pass", checkAuth, userController.changePassword);
 
-router.get("/search-user", checkAuth, userController.searchUsers); // Tìm user
-router.get("/friend/all", checkAuth, userController.getFriends); // Danh sách bạn bè
+// Tìm kiếm người dùng (hỗ trợ cả /search và /search-user)
+router.get("/search", checkAuth, userController.searchUsers);
+router.get("/search-user", checkAuth, userController.searchUsers);
+
+// Danh sách bạn bè
+router.get("/friends", checkAuth, userController.getFriends);
+router.get("/friend/all", checkAuth, userController.getFriends);
 
 module.exports = router;
+

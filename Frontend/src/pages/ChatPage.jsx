@@ -170,16 +170,27 @@ export const ChatPage = () => {
 
   // Send Message handler
   const handleSendMessage = ({ receiverId, text, media }) => {
+    const isDraft = activeConversation?.isDraft || activeConversation?._id?.startsWith('draft_');
+    const convIdToSend = isDraft ? null : activeConversation?._id;
+
     sendMessageSocket(
       {
         receiverId,
         text,
         media,
-        conversationId: activeConversation?._id,
+        conversationId: convIdToSend,
       },
       (res) => {
         if (res?.success && res.data?.message) {
           setMessages((prev) => [...prev, res.data.message]);
+          // Nâng cấp từ draft conversation lên real conversation sau khi gửi tin nhắn đầu tiên
+          if (isDraft && res.data.conversationId) {
+            setActiveConversation((prev) => ({
+              ...prev,
+              _id: res.data.conversationId,
+              isDraft: false,
+            }));
+          }
           fetchConversations();
         }
       }
@@ -200,13 +211,24 @@ export const ChatPage = () => {
     reactMessageSocket({ messageId, receiverId, emoji, conversationId });
   };
 
-  // Start chat with user directly
+  // Start chat with user directly (Lazy draft conversation)
   const handleStartChatWithUser = async (partnerId) => {
     try {
+      // 1. Kiểm tra nếu đã có cuộc hội thoại trong danh sách
+      const existing = conversations.find((c) =>
+        c.participants?.some((p) => (p._id || p.id) === partnerId)
+      );
+
+      if (existing) {
+        setActiveConversation(existing);
+        return;
+      }
+
+      // 2. Lấy thông tin partner (hoặc draft conversation từ server)
       const res = await api.get(`chat/conversations/partner/${partnerId}`);
       if (res?.data) {
         setActiveConversation(res.data);
-        fetchConversations();
+        setMessages([]);
       }
     } catch (err) {
       addToast('Không thể mở cuộc trò chuyện', 'error');

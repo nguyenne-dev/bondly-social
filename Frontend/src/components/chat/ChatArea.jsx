@@ -258,9 +258,73 @@ export const ChatArea = ({
         {loadingMessages ? (
           <LoadingSpinner message="Đang tải lịch sử trò chuyện..." />
         ) : messages.length === 0 ? (
-          <div style={{ textAlign: 'center', margin: 'auto', color: 'var(--text-muted)' }}>
-            <p style={{ fontSize: '0.95rem', fontWeight: 600 }}>Chưa có tin nhắn nào</p>
-            <p style={{ fontSize: '0.82rem', marginTop: '4px' }}>Hãy gửi lời chào đầu tiên nhé! 👋</p>
+          <div
+            className="animate-fade-in"
+            style={{
+              textAlign: 'center',
+              margin: 'auto',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: '30px',
+            }}
+          >
+            <div style={{ position: 'relative', marginBottom: '16px' }}>
+              <img
+                src={
+                  partner?.avatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    partner?.fullName || partner?.username || 'User'
+                  )}&background=06b6d4&color=fff`
+                }
+                alt={partner?.fullName}
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '24px',
+                  objectFit: 'cover',
+                  border: '2px solid var(--border)',
+                  boxShadow: '0 8px 24px rgba(6, 182, 212, 0.2)',
+                }}
+              />
+              {isOnline && (
+                <span
+                  className="online-dot"
+                  style={{
+                    position: 'absolute',
+                    bottom: '2px',
+                    right: '2px',
+                    width: '16px',
+                    height: '16px',
+                  }}
+                />
+              )}
+            </div>
+
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px' }}>
+              {partner?.fullName || partner?.username}
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '360px', marginBottom: '16px' }}>
+              {partner?.bio || 'Chưa có lời giới thiệu cá nhân'}
+            </p>
+
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                fontSize: '0.85rem',
+                color: 'var(--primary)',
+                fontWeight: 600,
+              }}
+            >
+              <span>👋 Hãy gửi tin nhắn đầu tiên để bắt đầu trò chuyện!</span>
+            </div>
           </div>
         ) : (
           messages.map((msg) => {

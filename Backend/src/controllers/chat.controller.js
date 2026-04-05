@@ -1,6 +1,8 @@
 const chatService = require('../services/chat.service');
 const { responseOK, responseNG } = require('../utils/respone.util');
 
+const User = require('../models/users.model');
+
 // Lấy danh sách cuộc trò chuyện
 exports.getConversations = async (req, res) => {
   try {
@@ -13,7 +15,7 @@ exports.getConversations = async (req, res) => {
   }
 };
 
-// Lấy hoặc tạo cuộc trò chuyện với 1 user cụ thể
+// Lấy hoặc tạo cuộc trò chuyện với 1 user cụ thể (chỉ trả về draft nếu chưa có tin nhắn)
 exports.getOrCreateConversation = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -23,8 +25,29 @@ exports.getOrCreateConversation = async (req, res) => {
       return responseNG(res, 'Vui lòng cung cấp ID bạn chat', 400);
     }
 
-    const conversation = await chatService.getOrCreateConversation(userId, partnerId);
-    return responseOK(res, 'Lấy thông tin cuộc trò chuyện thành công', conversation);
+    const conversation = await chatService.findConversation(userId, partnerId);
+    if (conversation) {
+      return responseOK(res, 'Lấy thông tin cuộc trò chuyện thành công', conversation);
+    }
+
+    // Nếu chưa có hội thoại trong DB, lấy thông tin partner để hiển thị giao diện draft
+    const partner = await User.findById(partnerId).select('username fullName avatar status bio');
+    if (!partner) {
+      return responseNG(res, 'Không tìm thấy người dùng này', 404);
+    }
+
+    const draftConversation = {
+      _id: `draft_${partnerId}`,
+      isDraft: true,
+      participants: [
+        { _id: userId, username: req.user.username },
+        partner
+      ],
+      lastMessage: null,
+      unreadCounts: new Map(),
+    };
+
+    return responseOK(res, 'Khởi tạo cuộc hội thoại nháp', draftConversation);
   } catch (err) {
     console.error('Lỗi khi tìm/tạo cuộc trò chuyện:', err);
     return responseNG(res, err.message || 'Lỗi server', 500);
