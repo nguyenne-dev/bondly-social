@@ -283,3 +283,14 @@ body {
 .animate-pulse {
   animation: pulseGlow 2s infinite ease-in-out;
 }
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  .settings-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+

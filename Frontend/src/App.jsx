@@ -6,6 +6,10 @@ import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './components/common/Toast';
 import LoadingSpinner from './components/common/LoadingSpinner';
 
+import HomePage from './pages/HomePage';
+import ExplorePage from './pages/ExplorePage';
+import FeaturesPage from './pages/FeaturesPage';
+import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -38,7 +42,7 @@ const PublicRoute = ({ children }) => {
     );
   }
 
-  return !isAuthenticated ? children : <Navigate to="/" replace />;
+  return !isAuthenticated ? children : <Navigate to="/chat" replace />;
 };
 
 export const App = () => {
@@ -49,17 +53,12 @@ export const App = () => {
           <SocketProvider>
             <BrowserRouter>
               <Routes>
-                {/* Main Realtime Chat Page */}
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <ChatPage />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* 1. Public SEO Pages */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/explore" element={<ExplorePage />} />
+                <Route path="/features" element={<FeaturesPage />} />
 
-                {/* Authentication Routes */}
+                {/* 2. Authentication Pages */}
                 <Route
                   path="/login"
                   element={
@@ -77,6 +76,24 @@ export const App = () => {
                   }
                 />
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
+
+                {/* 3. Protected Application Pages */}
+                <Route
+                  path="/chat"
+                  element={
+                    <ProtectedRoute>
+                      <ChatPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute>
+                      <SettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
