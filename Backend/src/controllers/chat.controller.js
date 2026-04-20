@@ -65,7 +65,7 @@ exports.getMessages = async (req, res) => {
       return responseNG(res, 'Vui lòng cung cấp ID cuộc trò chuyện', 400);
     }
 
-    const data = await chatService.getConversationMessages(conversationId, page, limit);
+    const data = await chatService.getConversationMessages(conversationId, page, limit, req.user._id);
     return responseOK(res, 'Lấy tin nhắn thành công', data);
   } catch (err) {
     console.error('Lỗi khi lấy tin nhắn:', err);
@@ -153,5 +153,41 @@ exports.reactToMessage = async (req, res) => {
   } catch (err) {
     console.error('Lỗi khi thả cảm xúc tin nhắn:', err);
     return responseNG(res, err.message || 'Lỗi server', 500);
+  }
+};
+
+// Xóa tin nhắn một bên (chỉ ẩn phía user hiện tại, không xóa DB, có thể hoàn tác)
+exports.deleteMessageForMe = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { messageId } = req.params;
+
+    if (!messageId) {
+      return responseNG(res, 'Vui lòng cung cấp ID tin nhắn', 400);
+    }
+
+    const result = await chatService.deleteMessageForMe(messageId, userId);
+    return responseOK(res, 'Đã xóa tin nhắn ở phía bạn thành công', result);
+  } catch (err) {
+    console.error('Lỗi khi xóa tin nhắn một bên:', err);
+    return responseNG(res, err.message || 'Lỗi server', 400);
+  }
+};
+
+// Hoàn tác xóa tin nhắn một bên
+exports.undoDeleteMessageForMe = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { messageId } = req.params;
+
+    if (!messageId) {
+      return responseNG(res, 'Vui lòng cung cấp ID tin nhắn', 400);
+    }
+
+    const result = await chatService.undoDeleteMessageForMe(messageId, userId);
+    return responseOK(res, 'Đã hoàn tác xóa tin nhắn thành công', result);
+  } catch (err) {
+    console.error('Lỗi khi hoàn tác xóa tin nhắn:', err);
+    return responseNG(res, err.message || 'Lỗi server', 400);
   }
 };

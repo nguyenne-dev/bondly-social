@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Mail, Phone, Calendar, UserX, Shield, Sparkles } from 'lucide-react';
 import { useSocket } from '../../context/SocketContext';
+import { ImageViewerModal } from '../modals/ImageViewerModal';
 
 export const ProfileDrawer = ({ isOpen, onClose, partner, onUnfriend }) => {
   const { isUserOnline } = useSocket();
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
   const partnerId = partner?._id || partner?.id;
   const isOnline = isUserOnline(partnerId);
 
   if (!isOpen || !partner) return null;
+
+  const partnerAvatar = partner.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(partner.fullName || partner.username || 'User')}&background=06b6d4&color=fff`;
 
   return (
     <div
@@ -43,14 +47,13 @@ export const ProfileDrawer = ({ isOpen, onClose, partner, onUnfriend }) => {
       <div style={{ padding: '24px 20px', overflowY: 'auto', flex: 1 }}>
         {/* Avatar & Name */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '14px' }}>
+          <div
+            onClick={() => setIsViewerOpen(true)}
+            style={{ position: 'relative', display: 'inline-block', marginBottom: '14px', cursor: 'pointer' }}
+            title="Bấm để xem ảnh đại diện phóng to"
+          >
             <img
-              src={
-                partner.avatar ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  partner.fullName || partner.username || 'User'
-                )}&background=06b6d4&color=fff`
-              }
+              src={partnerAvatar}
               alt={partner.fullName}
               style={{
                 width: '80px',
@@ -59,6 +62,7 @@ export const ProfileDrawer = ({ isOpen, onClose, partner, onUnfriend }) => {
                 objectFit: 'cover',
                 border: '2px solid var(--primary)',
                 boxShadow: 'var(--shadow-md)',
+                transition: 'opacity 0.2s',
               }}
             />
             {isOnline && (
@@ -150,6 +154,13 @@ export const ProfileDrawer = ({ isOpen, onClose, partner, onUnfriend }) => {
           <UserX size={16} /> Hủy kết bạn
         </button>
       </div>
+
+      <ImageViewerModal
+        isOpen={isViewerOpen}
+        imageUrl={partnerAvatar}
+        altText={partner.fullName || partner.username}
+        onClose={() => setIsViewerOpen(false)}
+      />
     </div>
   );
 };

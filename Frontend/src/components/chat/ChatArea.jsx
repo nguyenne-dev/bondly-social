@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
+import { api } from '../../api/client';
+import { ImageViewerModal } from '../modals/ImageViewerModal';
+import { ConfirmModal } from '../modals/ConfirmModal';
 import { 
   Send, 
   Image as ImageIcon, 
@@ -9,14 +12,17 @@ import {
   Check, 
   CheckCheck, 
   RotateCcw, 
+  Trash2,
+  ArrowLeft,
   Heart, 
   ThumbsUp, 
   Laugh, 
-  Flame,
-  Info,
-  X,
-  Phone,
-  Video
+  Flame, 
+  Info, 
+  X, 
+  Phone, 
+  Video,
+  Loader2
 } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 
@@ -28,20 +34,37 @@ export const ChatArea = ({
   loadingMessages,
   onSendMessage,
   onRecallMessage,
+  onDeleteMessageForMe,
   onReactMessage,
   onToggleProfile,
+  onBack,
   isTyping,
 }) => {
   const { user } = useAuth();
   const { isUserOnline, sendTypingSocket, sendStopTypingSocket, markAsReadSocket } = useSocket();
   const [inputText, setInputText] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
+  const [viewerImage, setViewerImage] = useState(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+
+  // Confirm Modal state
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    cancelText: 'Hủy',
+    confirmType: 'danger',
+    onConfirm: () => {},
+  });
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const partner = conversation?.participants?.find(
     (p) => (p._id || p.id) !== (user?._id || user?.id)
@@ -100,15 +123,21 @@ export const ChatArea = ({
     }
   };
 
-  // Image upload handler (base64)
-  const handleImageSelect = (e) => {
+  // Image upload handler directly to Cloudinary
+  const handleImageSelect = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        setUploadingImage(true);
+        const res = await api.upload('upload/image', file);
+        if (res?.data?.url) {
+          setSelectedImage(res.data.url);
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải ảnh lên Cloudinary:', err);
+      } finally {
+        setUploadingImage(false);
+      }
     }
   };
 
@@ -170,17 +199,41 @@ export const ChatArea = ({
       {/* 1. Chat Header */}
       <div
         style={{
-          padding: '14px 24px',
+          height: '72px',
+          minHeight: '72px',
+          maxHeight: '72px',
+          padding: '0 24px',
           borderBottom: '1px solid var(--border)',
           backgroundColor: 'var(--bg-surface)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           zIndex: 10,
+          boxSizing: 'border-box',
+          flexShrink: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="btn-icon mobile-back-btn"
+              style={{ width: '38px', height: '38px', borderRadius: '12px', flexShrink: 0 }}
+              title="Quay lại danh sách hội thoại"
+            >
+              <ArrowLeft size={18} />
+            </button>
+          )}
+
+          <div
+            onClick={() => {
+              const avt = partner?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(partner?.fullName || partner?.username || 'User')}&background=06b6d4&color=fff`;
+              setViewerImage(avt);
+              setIsViewerOpen(true);
+            }}
+            style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}
+            title="Bấm để xem ảnh đại diện phóng to"
+          >
             <img
               src={
                 partner?.avatar ||
@@ -190,11 +243,13 @@ export const ChatArea = ({
               }
               alt={partner?.fullName}
               style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '15px',
+                width: '44px',
+                height: '44px',
+                borderRadius: '14px',
                 objectFit: 'cover',
                 border: '1px solid var(--border)',
+                display: 'block',
+                transition: 'opacity 0.2s ease',
               }}
             />
             {isOnline && (
@@ -390,6 +445,10 @@ export const ChatArea = ({
                           <img
                             src={msg.media.url}
                             alt="Attachment"
+                            onClick={() => {
+                              setViewerImage(msg.media.url);
+                              setIsViewerOpen(true);
+                            }}
                             style={{
                               maxWidth: '100%',
                               maxHeight: '320px',
@@ -397,10 +456,13 @@ export const ChatArea = ({
                               display: 'block',
                               marginBottom: msg.text ? '8px' : '0',
                               objectFit: 'cover',
+                              cursor: 'pointer',
+                              transition: 'opacity 0.2s ease',
                             }}
+                            title="Bấm để xem ảnh phóng to toàn màn hình"
                           />
                         )}
-                        {msg.text && <p>{msg.text}</p>}
+                        {msg.text && <p style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>}
                       </>
                     )}
 
@@ -477,19 +539,46 @@ export const ChatArea = ({
                         </button>
                       ))}
 
-                      {/* Recall button if mine */}
+                      {/* Delete for me button (Xóa một bên, không xóa DB thật) */}
+                      <button
+                        onClick={() => {
+                          setConfirmConfig({
+                            isOpen: true,
+                            title: 'Xóa tin nhắn ở phía bạn?',
+                            message: 'Tin nhắn này sẽ được ẩn ở màn hình của bạn. Người nhận vẫn xem được và bản ghi vẫn được lưu trữ an toàn.',
+                            confirmText: 'Xóa một bên',
+                            confirmType: 'danger',
+                            onConfirm: () => onDeleteMessageForMe && onDeleteMessageForMe(msg._id),
+                          });
+                        }}
+                        className="btn-icon"
+                        style={{ width: '26px', height: '26px', color: 'var(--text-subtle)' }}
+                        title="Xóa ở phía bạn"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+
+                      {/* Recall button if mine (Thu hồi với tất cả mọi người) */}
                       {isMe && (
                         <button
-                          onClick={() =>
-                            onRecallMessage({
-                              messageId: msg._id,
-                              receiverId: partnerId,
-                              conversationId: conversation._id,
-                            })
-                          }
+                          onClick={() => {
+                            setConfirmConfig({
+                              isOpen: true,
+                              title: 'Thu hồi tin nhắn với mọi người?',
+                              message: 'Tin nhắn sẽ được đánh dấu đã thu hồi (xóa toàn bộ) với tất cả thành viên trong cuộc trò chuyện.',
+                              confirmText: 'Thu hồi tất cả',
+                              confirmType: 'danger',
+                              onConfirm: () =>
+                                onRecallMessage({
+                                  messageId: msg._id,
+                                  receiverId: partnerId,
+                                  conversationId: conversation._id,
+                                }),
+                            });
+                          }}
                           className="btn-icon"
                           style={{ width: '26px', height: '26px', color: 'var(--danger)' }}
-                          title="Thu hồi tin nhắn"
+                          title="Thu hồi tin nhắn với tất cả"
                         >
                           <RotateCcw size={13} />
                         </button>
@@ -669,13 +758,35 @@ export const ChatArea = ({
             <Smile size={18} />
           </button>
 
-          <input
-            type="text"
+          <textarea
+            ref={textareaRef}
+            rows={1}
             className="form-input"
-            placeholder="Nhập tin nhắn..."
+            placeholder="Nhập tin nhắn... (Shift + Enter để xuống dòng)"
             value={inputText}
-            onChange={handleInputChange}
-            style={{ height: '44px', borderRadius: 'var(--radius-md)' }}
+            onChange={(e) => {
+              setInputText(e.target.value);
+              handleInputChange(e);
+              e.target.style.height = 'auto';
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+                if (textareaRef.current) textareaRef.current.style.height = '44px';
+              }
+            }}
+            style={{
+              minHeight: '44px',
+              maxHeight: '120px',
+              padding: '10px 14px',
+              borderRadius: 'var(--radius-md)',
+              resize: 'none',
+              overflowY: 'auto',
+              lineHeight: 1.45,
+              fontSize: '0.92rem',
+            }}
           />
 
           <button
@@ -688,6 +799,26 @@ export const ChatArea = ({
           </button>
         </form>
       </div>
+
+      {/* Fullscreen Image Viewer Modal */}
+      <ImageViewerModal
+        isOpen={isViewerOpen}
+        imageUrl={viewerImage}
+        altText="Ảnh chi tiết"
+        onClose={() => setIsViewerOpen(false)}
+      />
+
+      {/* Confirmation Modal for Delete & Recall */}
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        cancelText={confirmConfig.cancelText}
+        confirmType={confirmConfig.confirmType}
+        onConfirm={confirmConfig.onConfirm}
+        onClose={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -26,6 +27,7 @@ export const Sidebar = ({
   const { user, logout } = useAuth();
   const { isUserOnline } = useSocket();
   const { isDark, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
   // Lọc cuộc hội thoại theo tên bạn chat
@@ -51,50 +53,76 @@ export const Sidebar = ({
       {/* 1. Brand & Current User Header */}
       <div
         style={{
-          padding: '18px 20px',
+          padding: '16px 18px',
           borderBottom: '1px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '12px',
-              background: 'var(--primary-gradient)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(6, 182, 212, 0.4)',
-            }}
-          >
-            <Sparkles size={20} color="#ffffff" />
+        <Link
+          to="/settings"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            textDecoration: 'none',
+            color: 'inherit',
+          }}
+          title="Bấm để vào Cài đặt & Đổi ảnh đại diện"
+        >
+          <div style={{ position: 'relative' }}>
+            <img
+              src={
+                user?.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  user?.fullName || user?.username || 'User'
+                )}&background=06b6d4&color=fff`
+              }
+              alt="My Avatar"
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '12px',
+                objectFit: 'cover',
+                border: '1.5px solid var(--primary)',
+                boxShadow: '0 2px 8px rgba(6, 182, 212, 0.3)',
+              }}
+            />
+            <span
+              className="online-dot"
+              style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '9px', height: '9px' }}
+            />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
               Nex<span className="gradient-text">Chat</span>
             </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span className="online-dot"></span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                {user?.fullName || user?.username}
-              </span>
-            </div>
+            <span
+              style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-muted)',
+                maxWidth: '90px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                display: 'block',
+              }}
+            >
+              {user?.fullName || user?.username}
+            </span>
           </div>
-        </div>
+        </Link>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <button
             onClick={toggleTheme}
             className="btn-icon"
             style={{ width: '32px', height: '32px' }}
             title="Đổi giao diện Sáng / Tối"
           >
-            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+            {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
 
           <button
@@ -103,7 +131,7 @@ export const Sidebar = ({
             style={{ width: '32px', height: '32px', position: 'relative' }}
             title="Lời mời kết bạn"
           >
-            <Users size={16} />
+            <Users size={15} />
             {pendingRequestsCount > 0 && (
               <span
                 style={{
@@ -133,8 +161,17 @@ export const Sidebar = ({
             style={{ width: '32px', height: '32px' }}
             title="Tìm kiếm bạn bè mới"
           >
-            <UserPlus size={16} />
+            <UserPlus size={15} />
           </button>
+
+          <Link
+            to="/settings"
+            className="btn-icon"
+            style={{ width: '32px', height: '32px', textDecoration: 'none' }}
+            title="Cài đặt & Cập nhật ảnh đại diện"
+          >
+            <Settings size={15} />
+          </Link>
 
           <button
             onClick={logout}
@@ -142,7 +179,7 @@ export const Sidebar = ({
             style={{ width: '32px', height: '32px', color: 'var(--danger)' }}
             title="Đăng xuất"
           >
-            <LogOut size={16} />
+            <LogOut size={15} />
           </button>
         </div>
       </div>

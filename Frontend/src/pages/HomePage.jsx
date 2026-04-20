@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
+import SoundboardWidget from '../components/common/SoundboardWidget';
 import { useAuth } from '../context/AuthContext';
 import { 
   Sparkles, 
@@ -18,23 +19,46 @@ import {
   RotateCcw,
   Layers,
   Activity,
-  Heart
+  Heart,
+  CheckCheck
 } from 'lucide-react';
 
 export const HomePage = () => {
   const { isAuthenticated } = useAuth();
 
-  // Demo simulator state
+  // Demo simulator state - realistic conversation between teammates
   const [demoMessages, setDemoMessages] = useState([
-    { id: 1, sender: 'Hoàng Minh', isMe: false, text: 'Chào Nguyên! Tốc độ phản hồi WebSocket của NexChat nhanh thật đấy 🔥', time: '10:42', reactions: ['🔥', '🚀'] },
-    { id: 2, sender: 'Bạn', isMe: true, text: 'Đúng vậy! Độ trễ dưới 15ms và có cả âm thanh Web Audio thông báo nữa nè 🎵', time: '10:43', reactions: ['❤️'] },
-    { id: 3, sender: 'Hoàng Minh', isMe: false, text: 'Thả cảm xúc emoji và thu hồi tin nhắn mượt mà cực kỳ 👍', time: '10:43', reactions: ['👍'] },
+    {
+      id: 1,
+      sender: 'Hoàng Minh',
+      isMe: false,
+      text: 'Chào bạn! NexChat sử dụng WebSocket hai chiều với độ trễ phản hồi cực thấp 🔥',
+      time: '10:42',
+      reactions: ['🔥', '🚀'],
+    },
+    {
+      id: 2,
+      sender: 'Bạn',
+      isMe: true,
+      text: 'Giao diện Cyber Dark nhìn rất mượt, có cả âm thanh Web Audio và thả cảm xúc nữa 👍',
+      time: '10:43',
+      reactions: ['❤️'],
+    },
+    {
+      id: 3,
+      sender: 'Hoàng Minh',
+      isMe: false,
+      text: 'Đúng rồi! Cơ chế Draft Conversation giúp tạo cuộc trò chuyện tức thì không lo rác database.',
+      time: '10:44',
+      reactions: ['💯'],
+    },
   ]);
-  const [demoInput, setDemoInput] = useState('');
-  const [demoTyping, setDemoTyping] = useState(false);
 
+  const [demoInput, setDemoInput] = useState('');
+
+  // Send message directly without stiff robot
   const handleSendDemoMessage = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     if (!demoInput.trim()) return;
 
     const newMsg = {
@@ -48,25 +72,9 @@ export const HomePage = () => {
 
     setDemoMessages((prev) => [...prev, newMsg]);
     setDemoInput('');
-
-    // Simulate auto-reply after 1.2s
-    setDemoTyping(true);
-    setTimeout(() => {
-      setDemoTyping(false);
-      setDemoMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          sender: 'Hoàng Minh',
-          isMe: false,
-          text: 'Tuyệt vời! Tin nhắn đã được gửi và đồng bộ tức thì qua WebSocket Engine ⚡',
-          time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-          reactions: ['💯'],
-        },
-      ]);
-    }, 1200);
   };
 
+  // React to message directly
   const handleDemoReact = (msgId, emoji) => {
     setDemoMessages((prev) =>
       prev.map((m) => {
@@ -92,7 +100,7 @@ export const HomePage = () => {
           position: 'relative',
           padding: '80px 24px 60px',
           overflow: 'hidden',
-          background: 'radial-gradient(ellipse at 50% 10%, rgba(6, 182, 212, 0.18) 0%, transparent 65%)',
+          background: 'radial-gradient(ellipse at 50% 10%, rgba(6, 182, 212, 0.2) 0%, transparent 65%)',
         }}
       >
         <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
@@ -106,7 +114,7 @@ export const HomePage = () => {
               padding: '6px 16px',
               borderRadius: 'var(--radius-full)',
               backgroundColor: 'var(--primary-light)',
-              border: '1px solid rgba(6, 182, 212, 0.3)',
+              border: '1px solid rgba(6, 182, 212, 0.35)',
               color: 'var(--primary)',
               fontSize: '0.85rem',
               fontWeight: 700,
@@ -162,7 +170,7 @@ export const HomePage = () => {
                 padding: '0 32px',
                 fontSize: '1.05rem',
                 textDecoration: 'none',
-                boxShadow: '0 8px 25px rgba(6, 182, 212, 0.4)',
+                boxShadow: '0 6px 20px rgba(6, 182, 212, 0.35)',
               }}
             >
               <MessageSquare size={20} />
@@ -182,7 +190,7 @@ export const HomePage = () => {
 
           {/* Metrics Bar */}
           <div
-            className="glass-card"
+            className="glass-card cyber-card"
             style={{
               maxWidth: '900px',
               margin: '0 auto',
@@ -216,7 +224,7 @@ export const HomePage = () => {
       {/* 2. INTERACTIVE DEMO SIMULATOR */}
       <section style={{ padding: '60px 24px', backgroundColor: 'var(--bg-surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
               Trải Nghiệm Trực Tiếp
             </span>
@@ -224,17 +232,17 @@ export const HomePage = () => {
               Thử Nghiệm Giao Diện <span className="gradient-text">NexChat Simulator</span>
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '8px' }}>
-              Hãy thử gõ tin nhắn hoặc bấm vào emoji để trải nghiệm sự mượt mà ngay trên trình duyệt
+              Hãy thử gõ tin nhắn vào khung chat bên dưới và thả các biểu tượng cảm xúc
             </p>
           </div>
 
           {/* Interactive Chat Window Mockup */}
           <div
-            className="glass-card"
+            className="glass-card cyber-card"
             style={{
               borderRadius: '24px',
               overflow: 'hidden',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+              boxShadow: 'var(--shadow-lg)',
               border: '1px solid var(--border)',
             }}
           >
@@ -259,9 +267,9 @@ export const HomePage = () => {
                   <span className="online-dot" style={{ position: 'absolute', bottom: '-2px', right: '-2px' }} />
                 </div>
                 <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>Hoàng Minh (Tech Lead)</h4>
-                  <span style={{ fontSize: '0.78rem', color: demoTyping ? 'var(--primary)' : 'var(--online)', fontWeight: 600 }}>
-                    {demoTyping ? 'Đang gõ tin nhắn...' : 'Đang trực tuyến'}
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>Hoàng Minh</h4>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--online)', fontWeight: 600 }}>
+                    Đang trực tuyến
                   </span>
                 </div>
               </div>
@@ -289,6 +297,7 @@ export const HomePage = () => {
               {demoMessages.map((msg) => (
                 <div
                   key={msg.id}
+                  className="animate-bubble-pop"
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -355,16 +364,11 @@ export const HomePage = () => {
                             cursor: 'pointer',
                             fontSize: '0.9rem',
                             opacity: 0.7,
-                            transition: 'transform 0.15s, opacity 0.15s',
+                            padding: '2px',
+                            transition: 'opacity 0.15s',
                           }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.opacity = '1';
-                            e.currentTarget.style.transform = 'scale(1.3)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.opacity = '0.7';
-                            e.currentTarget.style.transform = 'scale(1)';
-                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
                         >
                           {em}
                         </button>
@@ -377,13 +381,6 @@ export const HomePage = () => {
                   </span>
                 </div>
               ))}
-
-              {demoTyping && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--primary)' }}>
-                  <span className="animate-pulse">● ● ●</span>
-                  <span>Hoàng Minh đang gõ...</span>
-                </div>
-              )}
             </div>
 
             {/* Input Form */}
@@ -412,6 +409,9 @@ export const HomePage = () => {
               </button>
             </form>
           </div>
+
+          {/* Soundboard Widget */}
+          <SoundboardWidget />
         </div>
       </section>
 
@@ -437,7 +437,7 @@ export const HomePage = () => {
           }}
         >
           {/* Card 1 */}
-          <div className="glass-card" style={{ padding: '32px' }}>
+          <div className="glass-card cyber-card" style={{ padding: '32px' }}>
             <div
               style={{
                 width: '48px',
@@ -462,7 +462,7 @@ export const HomePage = () => {
           </div>
 
           {/* Card 2 */}
-          <div className="glass-card" style={{ padding: '32px' }}>
+          <div className="glass-card cyber-card" style={{ padding: '32px' }}>
             <div
               style={{
                 width: '48px',
@@ -487,7 +487,7 @@ export const HomePage = () => {
           </div>
 
           {/* Card 3 */}
-          <div className="glass-card" style={{ padding: '32px' }}>
+          <div className="glass-card cyber-card" style={{ padding: '32px' }}>
             <div
               style={{
                 width: '48px',
@@ -512,7 +512,7 @@ export const HomePage = () => {
           </div>
 
           {/* Card 4 */}
-          <div className="glass-card" style={{ padding: '32px' }}>
+          <div className="glass-card cyber-card" style={{ padding: '32px' }}>
             <div
               style={{
                 width: '48px',
@@ -537,7 +537,7 @@ export const HomePage = () => {
           </div>
 
           {/* Card 5 */}
-          <div className="glass-card" style={{ padding: '32px' }}>
+          <div className="glass-card cyber-card" style={{ padding: '32px' }}>
             <div
               style={{
                 width: '48px',
@@ -562,7 +562,7 @@ export const HomePage = () => {
           </div>
 
           {/* Card 6 */}
-          <div className="glass-card" style={{ padding: '32px' }}>
+          <div className="glass-card cyber-card" style={{ padding: '32px' }}>
             <div
               style={{
                 width: '48px',
@@ -591,7 +591,7 @@ export const HomePage = () => {
       {/* 4. CTA BANNER */}
       <section style={{ padding: '70px 24px', backgroundColor: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
         <div
-          className="glass-card"
+          className="glass-card cyber-card"
           style={{
             maxWidth: '1000px',
             margin: '0 auto',

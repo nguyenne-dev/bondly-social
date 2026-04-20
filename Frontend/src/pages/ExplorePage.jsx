@@ -237,13 +237,12 @@ export const ExplorePage = () => {
           {filteredChannels.map((ch) => (
             <div
               key={ch.id}
-              className="glass-card"
+              className="glass-card cyber-card"
               style={{
                 padding: '28px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                transition: 'transform 0.2s, box-shadow 0.2s',
               }}
             >
               <div>

@@ -25,9 +25,15 @@ class ApiClient {
 
   async request(endpoint, options = {}) {
     const url = `${this.baseUrl}/${endpoint.replace(/^\//, '')}`;
+    const isFormData = options.body instanceof FormData;
+    const headers = this.getHeaders(options.headers);
+    if (isFormData) {
+      delete headers['Content-Type']; // Để trình duyệt tự tính toán multipart boundary
+    }
+
     const config = {
       ...options,
-      headers: this.getHeaders(options.headers),
+      headers,
       credentials: 'include',
     };
 
@@ -54,19 +60,30 @@ class ApiClient {
   }
 
   post(endpoint, body = {}, headers = {}) {
+    const isFormData = body instanceof FormData;
     return this.request(endpoint, {
       method: 'POST',
       headers,
-      body: JSON.stringify(body),
+      body: isFormData ? body : JSON.stringify(body),
     });
   }
 
   put(endpoint, body = {}, headers = {}) {
+    const isFormData = body instanceof FormData;
     return this.request(endpoint, {
       method: 'PUT',
       headers,
-      body: JSON.stringify(body),
+      body: isFormData ? body : JSON.stringify(body),
     });
+  }
+
+  upload(endpoint, file, fieldName = 'file', extraData = {}) {
+    const formData = new FormData();
+    formData.append(fieldName, file);
+    Object.keys(extraData).forEach((key) => {
+      formData.append(key, extraData[key]);
+    });
+    return this.post(endpoint, formData);
   }
 
   delete(endpoint, headers = {}) {

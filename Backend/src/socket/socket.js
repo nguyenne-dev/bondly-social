@@ -22,7 +22,7 @@ let io = null;
 const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.URL_FE || ['http://localhost:5173', 'http://localhost:3000'],
+      origin: process.env.URL_FE,
       credentials: true,
       methods: ['GET', 'POST'],
     },

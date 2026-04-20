@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
+import { ImageViewerModal } from '../components/modals/ImageViewerModal';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../components/common/Toast';
@@ -30,6 +31,8 @@ export const SettingsPage = () => {
 
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
+  const [viewerImage, setViewerImage] = useState(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   // Profile form
   const [profileData, setProfileData] = useState({
@@ -106,6 +109,43 @@ export const SettingsPage = () => {
       navigate('/login');
     }
   };
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Avatar upload handler directly to Cloudinary (Lưu trữ ảnh đám mây)
+  const handleAvatarFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingAvatar(true);
+      addToast('Đang tải ảnh lên máy chủ Cloudinary...', 'info');
+
+      const res = await api.upload('upload/avatar', file);
+      if (res?.data?.avatarUrl) {
+        setProfileData((prev) => ({ ...prev, avatar: res.data.avatarUrl }));
+        if (res.data.user) {
+          updateUser(res.data.user);
+        }
+        addToast('Tải ảnh đại diện lên Cloudinary thành công!', 'success');
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải ảnh lên Cloudinary:', err);
+      addToast(err.message || 'Lỗi khi tải ảnh lên đám mây', 'error');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  // Avatar presets
+  const AVATAR_PRESETS = [
+    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1628157582853-a796fa650a6a?w=150&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+  ];
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-app)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column' }}>
@@ -210,21 +250,127 @@ export const SettingsPage = () => {
               <form onSubmit={handleUpdateProfile}>
                 <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: '20px' }}>Hồ Sơ Cá Nhân</h3>
 
-                {/* Avatar Preview */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-                  <img
-                    src={
-                      profileData.avatar ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        profileData.fullName || user?.username || 'User'
-                      )}&background=06b6d4&color=fff`
-                    }
-                    alt="Avatar"
-                    style={{ width: '70px', height: '70px', borderRadius: '20px', objectFit: 'cover', border: '2px solid var(--border)' }}
-                  />
-                  <div>
-                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700 }}>@{user?.username}</h4>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{user?.email}</p>
+                {/* Avatar Preview & Upload Area */}
+                <div style={{ marginBottom: '24px', padding: '20px', backgroundColor: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, marginBottom: '14px' }}>
+                    Ảnh đại diện
+                  </label>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '22px', flexWrap: 'wrap' }}>
+                    {/* Clickable Avatar with Camera Overlay & Fullscreen Preview */}
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="file"
+                        id="avatar-file-input"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleAvatarFileSelect}
+                        disabled={uploadingAvatar}
+                      />
+                      <div
+                        onClick={() => {
+                          const currentAvt = profileData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.fullName || user?.username || 'User')}&background=06b6d4&color=fff`;
+                          setViewerImage(currentAvt);
+                          setIsViewerOpen(true);
+                        }}
+                        style={{ cursor: 'pointer', display: 'block', position: 'relative' }}
+                        title="Bấm để xem ảnh phóng to toàn màn hình"
+                      >
+                        <img
+                          src={
+                            profileData.avatar ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                              profileData.fullName || user?.username || 'User'
+                            )}&background=06b6d4&color=fff`
+                          }
+                          alt="Avatar"
+                          style={{
+                            width: '84px',
+                            height: '84px',
+                            borderRadius: '24px',
+                            objectFit: 'cover',
+                            border: '2px solid var(--primary)',
+                            boxShadow: '0 4px 14px rgba(6, 182, 212, 0.3)',
+                            display: 'block',
+                            opacity: uploadingAvatar ? 0.5 : 1,
+                            transition: 'opacity 0.2s ease',
+                          }}
+                        />
+                      </div>
+
+                      <label
+                        htmlFor="avatar-file-input"
+                        style={{
+                          position: 'absolute',
+                          bottom: '-4px',
+                          right: '-4px',
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--primary)',
+                          color: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '2px solid var(--bg-surface)',
+                          boxShadow: 'var(--shadow-sm)',
+                          cursor: uploadingAvatar ? 'wait' : 'pointer',
+                        }}
+                        title="Tải ảnh mới từ máy tính"
+                      >
+                        {uploadingAvatar ? <Loader2 size={14} className="animate-pulse" /> : '📷'}
+                      </label>
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                        <label
+                          htmlFor="avatar-file-input"
+                          className="btn btn-primary"
+                          style={{ height: '36px', padding: '0 14px', fontSize: '0.82rem', cursor: uploadingAvatar ? 'wait' : 'pointer' }}
+                        >
+                          {uploadingAvatar ? 'Đang tải lên...' : 'Tải ảnh từ máy'}
+                        </label>
+
+                        {profileData.avatar && (
+                          <button
+                            type="button"
+                            onClick={() => setProfileData((prev) => ({ ...prev, avatar: '' }))}
+                            className="btn btn-ghost"
+                            style={{ height: '36px', padding: '0 12px', fontSize: '0.82rem', color: 'var(--danger)' }}
+                            disabled={uploadingAvatar}
+                          >
+                            Xóa ảnh
+                          </button>
+                        )}
+                      </div>
+
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)' }}>
+                        Chọn ảnh từ thiết bị hoặc chọn nhanh các avatar mẫu:
+                      </p>
+
+                      {/* Presets List */}
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        {AVATAR_PRESETS.map((presetUrl, idx) => (
+                          <img
+                            key={idx}
+                            src={presetUrl}
+                            alt={`Preset ${idx + 1}`}
+                            onClick={() => setProfileData((prev) => ({ ...prev, avatar: presetUrl }))}
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              objectFit: 'cover',
+                              cursor: 'pointer',
+                              border: profileData.avatar === presetUrl ? '2px solid var(--primary)' : '1px solid var(--border)',
+                              opacity: profileData.avatar === presetUrl ? 1 : 0.7,
+                              transition: 'all 0.15s ease',
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -253,19 +399,6 @@ export const SettingsPage = () => {
                       placeholder="Chia sẻ đôi lời về bản thân hoặc công nghệ yêu thích..."
                       value={profileData.bio}
                       onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                      Link ảnh đại diện (URL Avatar)
-                    </label>
-                    <input
-                      type="url"
-                      className="form-input"
-                      placeholder="https://example.com/avatar.png"
-                      value={profileData.avatar}
-                      onChange={(e) => setProfileData({ ...profileData, avatar: e.target.value })}
                     />
                   </div>
 
@@ -398,6 +531,13 @@ export const SettingsPage = () => {
           </div>
         </div>
       </div>
+
+      <ImageViewerModal
+        isOpen={isViewerOpen}
+        imageUrl={viewerImage}
+        altText="Ảnh đại diện"
+        onClose={() => setIsViewerOpen(false)}
+      />
 
       <Footer />
     </div>

@@ -51,11 +51,16 @@ class ChatService {
     return conversations;
   }
 
-  // Lấy tin nhắn trong cuộc trò chuyện
-  async getConversationMessages(conversationId, page = 1, limit = 50) {
+  // Lấy tin nhắn trong cuộc trò chuyện (lọc bỏ các tin nhắn user đã xóa một bên)
+  async getConversationMessages(conversationId, page = 1, limit = 50, userId = null) {
     const skip = (page - 1) * limit;
 
-    const messages = await Message.find({ conversationId })
+    const query = { conversationId };
+    if (userId) {
+      query.deletedFor = { $ne: userId };
+    }
+
+    const messages = await Message.find(query)
       .populate('senderId', 'username fullName avatar')
       .populate('receiverId', 'username fullName avatar')
       .populate('reactions.userId', 'username fullName avatar')
@@ -63,7 +68,7 @@ class ChatService {
       .skip(skip)
       .limit(limit);
 
-    const total = await Message.countDocuments({ conversationId });
+    const total = await Message.countDocuments(query);
 
     return {
       messages,
@@ -139,7 +144,7 @@ class ChatService {
     };
   }
 
-  // Thu hồi tin nhắn
+  // Thu hồi tin nhắn (xóa với tất cả mọi người, deletedAll = true, isRecalled = true)
   async recallMessage(messageId, userId) {
     const message = await Message.findById(messageId);
     if (!message) {
@@ -151,9 +156,45 @@ class ChatService {
     }
 
     message.isRecalled = true;
-    message.text = 'Tin nhắn đã được thu hồi';
-    message.media = { url: '', type: 'none', name: '', size: 0 };
+    message.deletedAll = true; // Đánh dấu đã xóa all
     await message.save();
+
+    return message;
+  }
+
+  // Xóa tin nhắn ở phía người dùng (xóa một bên, không xóa bản ghi MongoDB thật, có thể hoàn tác)
+  async deleteMessageForMe(messageId, userId) {
+    const message = await Message.findById(messageId);
+    if (!message) {
+      throw new Error('Tin nhắn không tồn tại');
+    }
+
+    if (!message.deletedFor) {
+      message.deletedFor = [];
+    }
+
+    const userIdStr = userId.toString();
+    const alreadyDeleted = message.deletedFor.some((id) => id.toString() === userIdStr);
+    if (!alreadyDeleted) {
+      message.deletedFor.push(userId);
+      await message.save();
+    }
+
+    return message;
+  }
+
+  // Hoàn tác xóa tin nhắn một bên (Undo delete for me)
+  async undoDeleteMessageForMe(messageId, userId) {
+    const message = await Message.findById(messageId);
+    if (!message) {
+      throw new Error('Tin nhắn không tồn tại');
+    }
+
+    if (message.deletedFor && message.deletedFor.length > 0) {
+      const userIdStr = userId.toString();
+      message.deletedFor = message.deletedFor.filter((id) => id.toString() !== userIdStr);
+      await message.save();
+    }
 
     return message;
   }

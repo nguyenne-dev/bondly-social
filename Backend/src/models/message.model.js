@@ -43,6 +43,16 @@ const messageSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    deletedAll: {
+      type: Boolean,
+      default: false,
+    },
+    deletedFor: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     reactions: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

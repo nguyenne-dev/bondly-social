@@ -81,7 +81,7 @@ export const FeaturesPage = () => {
           </div>
 
           <div
-            className="glass-card"
+            className="glass-card cyber-card"
             style={{
               padding: '36px',
               display: 'grid',

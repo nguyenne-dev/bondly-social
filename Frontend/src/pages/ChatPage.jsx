@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useToast } from '../components/common/Toast';
@@ -11,6 +12,7 @@ import SearchUsersModal from '../components/modals/SearchUsersModal';
 
 export const ChatPage = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     sendMessageSocket,
     recallMessageSocket,
@@ -235,6 +237,15 @@ export const ChatPage = () => {
     }
   };
 
+  // Tự động mở chat khi chuyển hướng từ thanh Header search (/chat?partnerId=...)
+  const targetPartnerId = searchParams.get('partnerId');
+  useEffect(() => {
+    if (targetPartnerId) {
+      handleStartChatWithUser(targetPartnerId);
+      setSearchParams({}, { replace: true });
+    }
+  }, [targetPartnerId, conversations.length]);
+
   // Accept Friend Request
   const handleAcceptRequest = async (requestId) => {
     try {
@@ -281,6 +292,27 @@ export const ChatPage = () => {
     }
   };
 
+  // Mobile responsive detection
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Delete message for me (soft delete)
+  const handleDeleteMessageForMe = async (messageId) => {
+    try {
+      await api.delete(`chat/messages/delete-for-me/${messageId}`);
+      setMessages((prev) => prev.filter((m) => m._id !== messageId));
+      addToast('Đã xóa tin nhắn ở phía bạn', 'info');
+    } catch (err) {
+      console.error('Lỗi khi xóa tin nhắn:', err);
+      addToast(err.message || 'Lỗi khi xóa tin nhắn', 'error');
+    }
+  };
+
   const partner = activeConversation?.participants?.find(
     (p) => (p._id || p.id) !== (user?._id || user?.id)
   );
@@ -295,27 +327,35 @@ export const ChatPage = () => {
         backgroundColor: 'var(--bg-app)',
       }}
     >
-      {/* 1. Sidebar */}
-      <Sidebar
-        conversations={conversations}
-        activeConversation={activeConversation}
-        onSelectConversation={(conv) => setActiveConversation(conv)}
-        onOpenSearchModal={() => setShowSearchModal(true)}
-        onOpenRequestsModal={() => setShowRequestsModal(true)}
-        pendingRequestsCount={incomingRequests.length}
-      />
+      {/* 1. Sidebar (Full width on mobile when no chat active) */}
+      {(!isMobile || !activeConversation) && (
+        <div style={{ width: isMobile ? '100%' : 'auto', height: '100%', display: 'flex' }}>
+          <Sidebar
+            conversations={conversations}
+            activeConversation={activeConversation}
+            onSelectConversation={(conv) => setActiveConversation(conv)}
+            onOpenSearchModal={() => setShowSearchModal(true)}
+            onOpenRequestsModal={() => setShowRequestsModal(true)}
+            pendingRequestsCount={incomingRequests.length}
+          />
+        </div>
+      )}
 
-      {/* 2. Main Chat Area */}
-      <ChatArea
-        conversation={activeConversation}
-        messages={messages}
-        loadingMessages={loadingMessages}
-        onSendMessage={handleSendMessage}
-        onRecallMessage={handleRecallMessage}
-        onReactMessage={handleReactMessage}
-        onToggleProfile={() => setShowProfileDrawer(!showProfileDrawer)}
-        isTyping={typingPartnerId === (partner?._id || partner?.id)}
-      />
+      {/* 2. Main Chat Area (Full width on mobile with back button) */}
+      {(!isMobile || activeConversation) && (
+        <ChatArea
+          conversation={activeConversation}
+          messages={messages}
+          loadingMessages={loadingMessages}
+          onSendMessage={handleSendMessage}
+          onRecallMessage={handleRecallMessage}
+          onDeleteMessageForMe={handleDeleteMessageForMe}
+          onReactMessage={handleReactMessage}
+          onToggleProfile={() => setShowProfileDrawer(!showProfileDrawer)}
+          onBack={isMobile ? () => setActiveConversation(null) : null}
+          isTyping={typingPartnerId === (partner?._id || partner?.id)}
+        />
+      )}
 
       {/* 3. Partner Profile Drawer */}
       <ProfileDrawer

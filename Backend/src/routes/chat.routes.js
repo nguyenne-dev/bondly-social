@@ -27,4 +27,10 @@ router.put('/messages/recall/:messageId', chatController.recallMessage);
 // 7. Thả cảm xúc emoji
 router.post('/messages/react/:messageId', chatController.reactToMessage);
 
+// 8. Xóa tin nhắn một bên (không xóa DB thật)
+router.delete('/messages/delete-for-me/:messageId', chatController.deleteMessageForMe);
+
+// 9. Hoàn tác xóa tin nhắn một bên
+router.put('/messages/undo-delete/:messageId', chatController.undoDeleteMessageForMe);
+
 module.exports = router;
