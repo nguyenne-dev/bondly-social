@@ -61,7 +61,7 @@ export const FeaturesPage = () => {
           </div>
 
           <h1 style={{ fontSize: '2.6rem', fontWeight: 900, marginBottom: '16px' }}>
-            Sức Mạnh Kỹ Thuật Đằng Sau <span className="gradient-text">NexChat</span>
+            Sức Mạnh Kỹ Thuật Đằng Sau <span className="gradient-text">Bondly</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: 1.6 }}>
             Khám phá chi tiết kiến trúc WebSocket phân tán, tối ưu hóa CSDL MongoDB Indexing, tổng hợp âm thanh Web Audio và cơ chế bảo mật đa tầng.
@@ -179,7 +179,7 @@ export const FeaturesPage = () => {
           <div style={{ textAlign: 'center', marginBottom: '36px' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 800 }}>3. So Sánh Hiệu Năng Truyền Tải</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '6px' }}>
-              Tại sao NexChat lựa chọn kiến trúc WebSockets thuần thay vì HTTP Polling truyền thống
+              Tại sao Bondly lựa chọn kiến trúc WebSockets thuần thay vì HTTP Polling truyền thống
             </p>
           </div>
 
@@ -217,7 +217,7 @@ export const FeaturesPage = () => {
             <div className="glass-card" style={{ padding: '30px', border: '2px solid var(--primary)', background: 'radial-gradient(circle at top, rgba(6, 182, 212, 0.15) 0%, var(--bg-surface) 100%)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)' }}>
-                  NexChat WebSocket Engine
+                  Bondly WebSocket Engine
                 </h4>
                 <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '4px', background: 'var(--primary)', color: '#fff', fontWeight: 700 }}>
                   CHUẨN HIỆN ĐẠI

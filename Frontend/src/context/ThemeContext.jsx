@@ -4,12 +4,12 @@ const ThemeContext = createContext(null);
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('nexchat_theme') || 'dark';
+    return localStorage.getItem('bondly_theme') || localStorage.getItem('nexchat_theme') || 'dark';
   });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('nexchat_theme', theme);
+    localStorage.setItem('bondly_theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

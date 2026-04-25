@@ -107,7 +107,7 @@ export const SoundboardWidget = () => {
           </div>
           <div>
             <h4 style={{ fontSize: '1rem', fontWeight: 800 }}>Web Audio Soundboard</h4>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Nghe thử âm thanh tổng hợp thời gian thực của NexChat</p>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Nghe thử âm thanh tổng hợp thời gian thực của Bondly</p>
           </div>
         </div>
 

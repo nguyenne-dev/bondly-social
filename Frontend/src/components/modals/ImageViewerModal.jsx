@@ -23,7 +23,7 @@ export const ImageViewerModal = ({ isOpen, imageUrl, altText = 'Ảnh', onClose 
     e.stopPropagation();
     const link = document.createElement('a');
     link.href = imageUrl;
-    link.download = `nexchat_image_${Date.now()}.png`;
+    link.download = `bondly_image_${Date.now()}.png`;
     link.target = '_blank';
     link.rel = 'noreferrer';
     document.body.appendChild(link);

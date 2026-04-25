@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/Toast';
-import { Sparkles, Mail, Lock, User, UserPlus, ArrowRight, Loader2 } from 'lucide-react';
+import { Link2, Mail, Lock, User, UserPlus, ArrowRight, Loader2 } from 'lucide-react';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
@@ -82,11 +82,11 @@ export const RegisterPage = () => {
               boxShadow: '0 8px 20px rgba(6, 182, 212, 0.4)',
             }}
           >
-            <Sparkles size={26} color="#fff" />
+            <Link2 size={26} color="#fff" />
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Tạo Tài Khoản</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
-            Tham gia cộng đồng chat realtime NexChat
+            Tham gia cộng đồng mạng xã hội & chat Bondly
           </p>
         </div>
 

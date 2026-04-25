@@ -17,7 +17,7 @@ exports.uploadImage = async (req, res) => {
       return responseNG(res, 'Vui lòng cung cấp tệp ảnh hoặc base64', 400);
     }
 
-    const folder = req.body.folder || 'nexchat_chat_media';
+    const folder = req.body.folder || 'bondly_chat_media';
     const result = await uploadService.uploadImage(file, folder);
 
     return responseOK(res, 'Tải ảnh lên Cloudinary thành công', result);
@@ -43,8 +43,8 @@ exports.uploadAvatar = async (req, res) => {
       return responseNG(res, 'Vui lòng cung cấp tệp ảnh', 400);
     }
 
-    // 1. Upload lên Cloudinary folder 'nexchat_avatars'
-    const result = await uploadService.uploadImage(file, 'nexchat_avatars');
+    // 1. Upload lên Cloudinary folder 'bondly_avatars'
+    const result = await uploadService.uploadImage(file, 'bondly_avatars');
 
     // 2. Cập nhật URL Cloudinary vào User trong MongoDB
     const updatedUser = await updateInfoService(userId, { avatar: result.url });

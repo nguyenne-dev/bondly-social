@@ -52,7 +52,7 @@ app.use("/api/upload", uploadRoutes);
 app.get("/api/health", (req, res) => {
   res.json({
     status: "OK",
-    service: "NexChat Realtime Backend API",
+    service: "Bondly Social Realtime Backend API",
     timestamp: new Date().toISOString(),
   });
 });
@@ -70,5 +70,5 @@ connectDB();
 
 // Khởi động server
 server.listen(PORT, () => {
-  console.log(`🚀 NexChat Server chạy tại http://localhost:${PORT}`);
+  console.log(`🚀 Bondly Server chạy tại http://localhost:${PORT}`);
 });

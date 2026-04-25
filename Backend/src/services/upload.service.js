@@ -6,7 +6,7 @@ class UploadService {
    * @param {string|Buffer} file - Base64 string hoặc File buffer
    * @param {string} folder - Tên folder trên Cloudinary
    */
-  async uploadImage(file, folder = 'nexchat_uploads') {
+  async uploadImage(file, folder = 'bondly_uploads') {
     try {
       // Nếu là Base64 string
       if (typeof file === 'string') {

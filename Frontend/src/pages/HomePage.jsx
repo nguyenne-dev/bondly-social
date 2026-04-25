@@ -32,7 +32,7 @@ export const HomePage = () => {
       id: 1,
       sender: 'Hoàng Minh',
       isMe: false,
-      text: 'Chào bạn! NexChat sử dụng WebSocket hai chiều với độ trễ phản hồi cực thấp 🔥',
+      text: 'Chào bạn! Bondly kết nối bạn bè thời gian thực với độ trễ phản hồi cực thấp 🔥',
       time: '10:42',
       reactions: ['🔥', '🚀'],
     },
@@ -122,7 +122,7 @@ export const HomePage = () => {
             }}
           >
             <Zap size={15} />
-            <span>NexChat Realtime v2.0 • Socket.IO Engine</span>
+            <span>Bondly Social v2.0 • Realtime Engine</span>
           </div>
 
           {/* Heading */}
@@ -229,7 +229,7 @@ export const HomePage = () => {
               Trải Nghiệm Trực Tiếp
             </span>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginTop: '8px' }}>
-              Thử Nghiệm Giao Diện <span className="gradient-text">NexChat Simulator</span>
+              Thử Nghiệm Giao Diện <span className="gradient-text">Bondly Simulator</span>
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '8px' }}>
               Hãy thử gõ tin nhắn vào khung chat bên dưới và thả các biểu tượng cảm xúc
@@ -602,7 +602,7 @@ export const HomePage = () => {
           }}
         >
           <h2 style={{ fontSize: '2.3rem', fontWeight: 900, marginBottom: '16px' }}>
-            Sẵn Sàng Trải Nghiệm <span className="gradient-text">NexChat</span> Ngay Hôm Nay?
+            Sẵn Sàng Trải Nghiệm <span className="gradient-text">Bondly</span> Ngay Hôm Nay?
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', maxWidth: '600px', margin: '0 auto 32px', lineHeight: 1.6 }}>
             Gia nhập cộng đồng người dùng và cùng trò chuyện với tốc độ cực nhanh hoàn toàn miễn phí.

@@ -5,6 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../api/client';
 import { 
   Sparkles, 
+  Link2,
   MessageSquare, 
   Compass, 
   Cpu, 
@@ -130,11 +131,11 @@ export const Navbar = () => {
               flexShrink: 0,
             }}
           >
-            <Sparkles size={22} color="#fff" />
+            <Link2 size={22} color="#fff" />
           </div>
           <div>
             <span style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.2, display: 'block' }}>
-              Nex<span className="gradient-text">Chat</span>
+              Bond<span className="gradient-text">ly</span>
             </span>
             <span
               style={{
@@ -142,11 +143,11 @@ export const Navbar = () => {
                 fontSize: '0.68rem',
                 fontWeight: 700,
                 color: 'var(--primary)',
-                letterSpacing: '1.2px',
+                letterSpacing: '1.4px',
                 textTransform: 'uppercase',
               }}
             >
-              Realtime Engine
+              Social Network
             </span>
           </div>
         </Link>

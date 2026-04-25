@@ -22,7 +22,7 @@ const ProtectedRoute = ({ children }) => {
   if (loading) {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <LoadingSpinner message="Đang khởi tạo ứng dụng NexChat..." />
+        <LoadingSpinner message="Đang khởi tạo ứng dụng Bondly..." />
       </div>
     );
   }

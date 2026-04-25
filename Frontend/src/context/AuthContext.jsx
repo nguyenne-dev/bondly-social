@@ -6,26 +6,26 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('nexchat_user');
+      const savedUser = localStorage.getItem('bondly_user') || localStorage.getItem('nexchat_user');
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
     }
   });
 
-  const [token, setToken] = useState(() => localStorage.getItem('nexchat_token') || '');
+  const [token, setToken] = useState(() => localStorage.getItem('bondly_token') || localStorage.getItem('nexchat_token') || '');
   const [loading, setLoading] = useState(true);
 
   // Sync token & user from localStorage on mount
   useEffect(() => {
     const initAuth = async () => {
-      const savedToken = localStorage.getItem('nexchat_token');
+      const savedToken = localStorage.getItem('bondly_token') || localStorage.getItem('nexchat_token');
       if (savedToken) {
         try {
           const res = await api.get('user/profile');
           if (res?.data) {
             setUser(res.data);
-            localStorage.setItem('nexchat_user', JSON.stringify(res.data));
+            localStorage.setItem('bondly_user', JSON.stringify(res.data));
           }
         } catch (err) {
           console.warn('Phiên đăng nhập hết hạn hoặc lỗi token:', err);
@@ -46,8 +46,8 @@ export const AuthProvider = ({ children }) => {
 
       setToken(authToken);
       setUser(userData);
-      localStorage.setItem('nexchat_token', authToken);
-      localStorage.setItem('nexchat_user', JSON.stringify(userData));
+      localStorage.setItem('bondly_token', authToken);
+      localStorage.setItem('bondly_user', JSON.stringify(userData));
       return userData;
     }
     throw new Error(res?.message || 'Đăng nhập không thành công');
@@ -66,6 +66,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setToken('');
+    localStorage.removeItem('bondly_token');
+    localStorage.removeItem('bondly_user');
     localStorage.removeItem('nexchat_token');
     localStorage.removeItem('nexchat_user');
   };
@@ -73,7 +75,7 @@ export const AuthProvider = ({ children }) => {
   const updateUser = (updatedFields) => {
     setUser((prev) => {
       const nextUser = { ...prev, ...updatedFields };
-      localStorage.setItem('nexchat_user', JSON.stringify(nextUser));
+      localStorage.setItem('bondly_user', JSON.stringify(nextUser));
       return nextUser;
     });
   };

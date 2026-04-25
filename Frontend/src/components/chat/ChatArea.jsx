@@ -176,7 +176,7 @@ export const ChatArea = ({
           <Smile size={36} />
         </div>
         <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '8px' }}>
-          Chào mừng đến với <span className="gradient-text">NexChat</span>
+          Chào mừng đến với <span className="gradient-text">Bondly</span>
         </h3>
         <p style={{ maxWidth: '420px', fontSize: '0.92rem', lineHeight: 1.6 }}>
           Chọn một cuộc trò chuyện từ thanh bên trái hoặc tìm kiếm bạn bè để bắt đầu trao đổi tin nhắn tức thì.

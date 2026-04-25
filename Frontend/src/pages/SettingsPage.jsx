@@ -51,13 +51,14 @@ export const SettingsPage = () => {
 
   // Sound toggle
   const [soundEnabled, setSoundEnabled] = useState(() => {
-    return localStorage.getItem('nexchat_sound') !== 'disabled';
+    const saved = localStorage.getItem('bondly_sound') || localStorage.getItem('nexchat_sound');
+    return saved !== 'disabled';
   });
 
   const handleToggleSound = () => {
     const nextState = !soundEnabled;
     setSoundEnabled(nextState);
-    localStorage.setItem('nexchat_sound', nextState ? 'enabled' : 'disabled');
+    localStorage.setItem('bondly_sound', nextState ? 'enabled' : 'disabled');
     addToast(nextState ? 'Đã bật âm thanh thông báo' : 'Đã tắt âm thanh thông báo', 'info');
   };
 

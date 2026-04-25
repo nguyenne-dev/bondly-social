@@ -6,7 +6,7 @@ class ApiClient {
   }
 
   getToken() {
-    return localStorage.getItem('nexchat_token') || '';
+    return localStorage.getItem('bondly_token') || localStorage.getItem('nexchat_token') || '';
   }
 
   getHeaders(customHeaders = {}) {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, MessageSquare, Shield, Zap, Heart, Github, Globe, Server } from 'lucide-react';
+import { Link2, MessageSquare, Shield, Zap, Heart, Github, Globe, Server } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -38,14 +38,14 @@ export const Footer = () => {
                 boxShadow: '0 4px 12px rgba(6, 182, 212, 0.4)',
               }}
             >
-              <Sparkles size={18} color="#fff" />
+              <Link2 size={18} color="#fff" />
             </div>
             <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)' }}>
-              Nex<span className="gradient-text">Chat</span> Realtime
+              Bond<span className="gradient-text">ly</span> Social
             </span>
           </div>
           <p style={{ lineHeight: 1.6, marginBottom: '20px' }}>
-            Nền tảng nhắn tin và tương tác thời gian thực thế hệ mới. Xây dựng trên nền tảng WebSockets hai chiều với độ trễ phản hồi cực thấp.
+            Mạng xã hội và nền tảng kết nối thời gian thực thế hệ mới. Gắn kết bạn bè, chia sẻ khoảnh khắc và trò chuyện với độ trễ cực thấp.
           </p>
           <div style={{ display: 'flex', gap: '12px' }}>
             <span style={{ fontSize: '0.8rem', padding: '4px 10px', borderRadius: '6px', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
@@ -132,7 +132,7 @@ export const Footer = () => {
         }}
       >
         <div>
-          © 2026 <strong>NexChat Realtime Platform</strong>. Phát triển bởi <span className="gradient-text" style={{ fontWeight: 700 }}>Nguyên Dev</span>.
+          © 2026 <strong>Bondly Social Platform</strong>. Phát triển bởi <span className="gradient-text" style={{ fontWeight: 700 }}>Nguyên Dev</span>.
         </div>
         <div style={{ display: 'flex', gap: '20px' }}>
           <span>Tốc độ: &lt; 15ms</span>

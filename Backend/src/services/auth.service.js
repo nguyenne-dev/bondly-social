@@ -22,7 +22,7 @@ const loginService = async (accountOrUsername, password) => {
 
   const token = jwt.sign(
     { _id: fUser._id, username: fUser.username, email: fUser.email },
-    process.env.JWT_SECRET || "nexchat_super_secret_jwt_key_2026",
+    process.env.JWT_SECRET || "bondly_super_secret_jwt_key_2026",
     { expiresIn: "30d" }
   );
 
@@ -92,10 +92,10 @@ const sendSignupVerificationEmail = async (dataBody) => {
   try {
     await sendMail(
       email,
-      "Mã xác thực tài khoản - NexChat Realtime",
+      "Mã xác thực tài khoản - Bondly Social",
       `
         <h3>Xin chào ${fullName},</h3>
-        <p>Mã OTP xác thực tài khoản NexChat của bạn là:</p>
+        <p>Mã OTP xác thực tài khoản Bondly của bạn là:</p>
         <h2 style="color: #06b6d4; letter-spacing: 4px; font-size: 28px;">${otpCode}</h2>
         <p>Mã có hiệu lực trong 10 phút. Không chia sẻ mã này cho bất kỳ ai.</p>
       `
@@ -128,7 +128,7 @@ const verifyOtpCodeService = async (email, otp) => {
 
   const token = jwt.sign(
     { _id: user._id, username: user.username, email: user.email },
-    process.env.JWT_SECRET || "nexchat_super_secret_jwt_key_2026",
+    process.env.JWT_SECRET || "bondly_super_secret_jwt_key_2026",
     { expiresIn: "30d" }
   );
 
@@ -142,7 +142,7 @@ const verifyAndCreateUserService = async (rawToken) => {
   const token = decodeURIComponent(rawToken);
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET || "nexchat_super_secret_jwt_key_2026");
+    decoded = jwt.verify(token, process.env.JWT_SECRET || "bondly_super_secret_jwt_key_2026");
   } catch {
     throw { message: "Token không hợp lệ hoặc đã hết hạn", statusCode: 401 };
   }
