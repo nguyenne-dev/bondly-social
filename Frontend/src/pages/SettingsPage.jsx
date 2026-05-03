@@ -51,7 +51,7 @@ export const SettingsPage = () => {
 
   // Sound toggle
   const [soundEnabled, setSoundEnabled] = useState(() => {
-    const saved = localStorage.getItem('bondly_sound') || localStorage.getItem('nexchat_sound');
+    const saved = localStorage.getItem('bondly_sound');
     return saved !== 'disabled';
   });
 

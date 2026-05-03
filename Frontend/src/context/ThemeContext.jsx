@@ -4,7 +4,7 @@ const ThemeContext = createContext(null);
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('bondly_theme') || localStorage.getItem('nexchat_theme') || 'dark';
+    return localStorage.getItem('bondly_theme') || 'dark';
   });
 
   useEffect(() => {

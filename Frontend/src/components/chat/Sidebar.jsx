@@ -96,7 +96,7 @@ export const Sidebar = ({
           </div>
           <div>
             <h2 style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-              Nex<span className="gradient-text">Chat</span>
+              Bond<span className="gradient-text">ly</span>
             </h2>
             <span
               style={{

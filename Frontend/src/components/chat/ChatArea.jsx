@@ -22,7 +22,9 @@ import {
   X, 
   Phone, 
   Video,
-  Loader2
+  Loader2,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 
@@ -33,6 +35,7 @@ export const ChatArea = ({
   messages,
   loadingMessages,
   onSendMessage,
+  onRetryMessage,
   onRecallMessage,
   onDeleteMessageForMe,
   onReactMessage,
@@ -383,9 +386,20 @@ export const ChatArea = ({
           </div>
         ) : (
           messages.map((msg) => {
+            const myId = (user?._id || user?.id)?.toString();
+            const msgSenderId = (
+              msg.senderId?._id ||
+              msg.senderId?.id ||
+              msg.senderId ||
+              msg.sender?._id ||
+              msg.sender?.id ||
+              msg.sender
+            )?.toString();
+
             const isMe =
-              (msg.senderId?._id || msg.senderId?.id || msg.senderId) ===
-              (user?._id || user?.id);
+              msg.status === 'sending' ||
+              msg.status === 'failed' ||
+              Boolean(myId && msgSenderId && myId === msgSenderId);
 
             const isRecalled = msg.isRecalled;
             const isHovered = hoveredMessageId === msg._id;
@@ -605,11 +619,81 @@ export const ChatArea = ({
                     })}
                   </span>
                   {isMe && !isRecalled && (
-                    <span>
-                      {msg.isRead ? (
-                        <CheckCheck size={14} color="var(--primary)" />
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      {msg.status === 'sending' ? (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            color: 'var(--text-subtle)',
+                            opacity: 0.8,
+                          }}
+                          title="Đang gửi tin nhắn..."
+                        >
+                          <Loader2 size={12} className="animate-spin" />
+                          <span style={{ fontSize: '0.68rem' }}>Đang gửi</span>
+                        </span>
+                      ) : msg.status === 'failed' ? (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            color: '#ef4444',
+                            fontWeight: 600,
+                          }}
+                          title="Gửi thất bại. Bấm để thử lại!"
+                        >
+                          <AlertCircle size={12} />
+                          <span style={{ fontSize: '0.68rem' }}>Lỗi</span>
+                          {onRetryMessage && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRetryMessage(msg);
+                              }}
+                              className="btn-icon"
+                              style={{
+                                width: '18px',
+                                height: '18px',
+                                padding: 0,
+                                color: '#ef4444',
+                                background: 'rgba(239, 68, 68, 0.12)',
+                                borderRadius: '4px',
+                              }}
+                              title="Thử lại"
+                            >
+                              <RefreshCw size={10} />
+                            </button>
+                          )}
+                        </span>
+                      ) : msg.isRead || msg.status === 'read' ? (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            color: 'var(--primary)',
+                          }}
+                          title="Đã xem"
+                        >
+                          <CheckCheck size={14} color="var(--primary)" />
+                          <span style={{ fontSize: '0.68rem', fontWeight: 600 }}>Đã xem</span>
+                        </span>
                       ) : (
-                        <Check size={14} />
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            color: 'var(--text-subtle)',
+                          }}
+                          title="Đã gửi thành công"
+                        >
+                          <Check size={14} />
+                          <span style={{ fontSize: '0.68rem' }}>Đã gửi</span>
+                        </span>
                       )}
                     </span>
                   )}
@@ -765,7 +849,6 @@ export const ChatArea = ({
             placeholder="Nhập tin nhắn... (Shift + Enter để xuống dòng)"
             value={inputText}
             onChange={(e) => {
-              setInputText(e.target.value);
               handleInputChange(e);
               e.target.style.height = 'auto';
               e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;

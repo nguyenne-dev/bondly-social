@@ -9,6 +9,7 @@ import ChatArea from '../components/chat/ChatArea';
 import ProfileDrawer from '../components/chat/ProfileDrawer';
 import FriendRequestsModal from '../components/modals/FriendRequestsModal';
 import SearchUsersModal from '../components/modals/SearchUsersModal';
+import ConfirmModal from '../components/modals/ConfirmModal';
 
 export const ChatPage = () => {
   const { user } = useAuth();
@@ -43,6 +44,17 @@ export const ChatPage = () => {
   const [friendsList, setFriendsList] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [typingPartnerId, setTypingPartnerId] = useState(null);
+
+  // Confirm Modal state
+  const [confirmModalConfig, setConfirmModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Xác nhận',
+    cancelText: 'Hủy',
+    confirmType: 'danger',
+    onConfirm: () => {},
+  });
 
   // Fetch Conversations List
   const fetchConversations = useCallback(async () => {
@@ -170,10 +182,54 @@ export const ChatPage = () => {
     });
   }, [activeConversation?._id, fetchConversations, fetchFriendRequests, addToast]);
 
-  // Send Message handler
-  const handleSendMessage = ({ receiverId, text, media }) => {
+  // Send Message handler với đầy đủ 4 trạng thái phân phối: sending -> sent -> read / failed
+  const handleSendMessage = ({ receiverId, text, media, tempIdToRetry = null }) => {
     const isDraft = activeConversation?.isDraft || activeConversation?._id?.startsWith('draft_');
     const convIdToSend = isDraft ? null : activeConversation?._id;
+
+    const currentUserId = user?._id || user?.id;
+    const tempId = tempIdToRetry || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`;
+
+    // 1. Tạo tin nhắn đang gửi (status = 'sending') hiển thị tức thì 0ms trên màn hình người gửi (isMe)
+    if (!tempIdToRetry) {
+      const optimisticMsg = {
+        _id: tempId,
+        tempId,
+        conversationId: convIdToSend,
+        senderId: currentUserId,
+        sender: user,
+        receiverId,
+        text: text?.trim() || '',
+        media: media || null,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        status: 'sending', // 'sending' | 'sent' | 'read' | 'failed'
+        reactions: [],
+        deletedFor: [],
+        deletedAll: false,
+      };
+
+      setMessages((prev) => [...prev, optimisticMsg]);
+    } else {
+      // Đang gửi lại tin nhắn bị lỗi
+      setMessages((prev) =>
+        prev.map((m) =>
+          (m._id === tempId || m.tempId === tempId) ? { ...m, status: 'sending' } : m
+        )
+      );
+    }
+
+    // 2. Gửi qua Socket.IO tới server
+    let isAcknowledged = false;
+    const sendTimer = setTimeout(() => {
+      if (!isAcknowledged) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            (m._id === tempId || m.tempId === tempId) ? { ...m, status: 'failed' } : m
+          )
+        );
+      }
+    }, 12000);
 
     sendMessageSocket(
       {
@@ -183,8 +239,20 @@ export const ChatPage = () => {
         conversationId: convIdToSend,
       },
       (res) => {
+        isAcknowledged = true;
+        clearTimeout(sendTimer);
+
         if (res?.success && res.data?.message) {
-          setMessages((prev) => [...prev, res.data.message]);
+          const serverMsg = {
+            ...res.data.message,
+            status: res.data.message.isRead ? 'read' : 'sent',
+          };
+
+          // Thay thế tin nhắn tạm bằng tin nhắn đã lưu trên server
+          setMessages((prev) =>
+            prev.map((m) => (m._id === tempId || m.tempId === tempId ? serverMsg : m))
+          );
+
           // Nâng cấp từ draft conversation lên real conversation sau khi gửi tin nhắn đầu tiên
           if (isDraft && res.data.conversationId) {
             setActiveConversation((prev) => ({
@@ -194,9 +262,32 @@ export const ChatPage = () => {
             }));
           }
           fetchConversations();
+        } else {
+          // Báo trạng thái gửi thất bại
+          setMessages((prev) =>
+            prev.map((m) =>
+              (m._id === tempId || m.tempId === tempId) ? { ...m, status: 'failed' } : m
+            )
+          );
+          addToast(res?.message || 'Gửi tin nhắn thất bại. Vui lòng thử lại!', 'error');
         }
       }
     );
+  };
+
+  // Retry send message handler
+  const handleRetryMessage = (failedMsg) => {
+    const partner = activeConversation?.participants?.find(
+      (p) => (p._id || p.id) !== (user?._id || user?.id)
+    );
+    const receiverId = failedMsg.receiverId || partner?._id || partner?.id;
+
+    handleSendMessage({
+      receiverId,
+      text: failedMsg.text,
+      media: failedMsg.media,
+      tempIdToRetry: failedMsg._id || failedMsg.tempId,
+    });
   };
 
   // Recall Message handler
@@ -280,16 +371,25 @@ export const ChatPage = () => {
   };
 
   // Unfriend
-  const handleUnfriend = async (friendId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn hủy kết bạn với người này?')) return;
-    try {
-      await api.delete(`friend-request/unfriend/${friendId}`);
-      addToast('Đã hủy kết bạn', 'info');
-      setShowProfileDrawer(false);
-      fetchFriendRequests();
-    } catch (err) {
-      addToast(err.message || 'Lỗi khi hủy kết bạn', 'error');
-    }
+  const handleUnfriend = (friendId) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Hủy kết bạn?',
+      message: 'Bạn có chắc chắn muốn hủy kết bạn với người này?',
+      confirmText: 'Hủy kết bạn',
+      cancelText: 'Hủy',
+      confirmType: 'danger',
+      onConfirm: async () => {
+        try {
+          await api.delete(`friend-request/unfriend/${friendId}`);
+          addToast('Đã hủy kết bạn', 'info');
+          setShowProfileDrawer(false);
+          fetchFriendRequests();
+        } catch (err) {
+          addToast(err.message || 'Lỗi khi hủy kết bạn', 'error');
+        }
+      },
+    });
   };
 
   // Mobile responsive detection
@@ -348,6 +448,7 @@ export const ChatPage = () => {
           messages={messages}
           loadingMessages={loadingMessages}
           onSendMessage={handleSendMessage}
+          onRetryMessage={handleRetryMessage}
           onRecallMessage={handleRecallMessage}
           onDeleteMessageForMe={handleDeleteMessageForMe}
           onReactMessage={handleReactMessage}
@@ -382,6 +483,17 @@ export const ChatPage = () => {
         onClose={() => setShowSearchModal(false)}
         onStartChatWithUser={handleStartChatWithUser}
         friendsList={friendsList}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        title={confirmModalConfig.title}
+        message={confirmModalConfig.message}
+        confirmText={confirmModalConfig.confirmText}
+        cancelText={confirmModalConfig.cancelText}
+        confirmType={confirmModalConfig.confirmType}
+        onConfirm={confirmModalConfig.onConfirm}
+        onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

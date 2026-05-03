@@ -4,11 +4,13 @@ import { useAuth } from './AuthContext';
 
 const SocketContext = createContext(null);
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3002';
+const SOCKET_URL = 'https://bondly-social.onrender.com';
 
 // Sound effect for new messages using Web Audio API (zero external assets needed)
 const playNotificationSound = () => {
   try {
+    if (localStorage.getItem('bondly_sound') === 'disabled') return;
+
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
     const ctx = new AudioContext();
