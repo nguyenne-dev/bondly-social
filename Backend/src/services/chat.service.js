@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Conversation = require('../models/conversation.model');
 const Message = require('../models/message.model');
 const User = require('../models/users.model');
@@ -52,29 +53,53 @@ class ChatService {
   }
 
   // Lấy tin nhắn trong cuộc trò chuyện (lọc bỏ các tin nhắn user đã xóa một bên)
-  async getConversationMessages(conversationId, page = 1, limit = 50, userId = null) {
-    const skip = (page - 1) * limit;
-
+  // Cursor-based pagination: không dùng skip/limit (tránh skip sâu chậm
+  // và không ổn định khi nhiều tin trùng createdAt).
+  // Cursor có dạng "<createdAt ISO>|<_id>", trỏ tới tin cũ nhất của trang đã tải.
+  async getConversationMessages(conversationId, limit = 100, cursor = null, userId = null) {
     const query = { conversationId };
     if (userId) {
       query.deletedFor = { $ne: userId };
     }
 
-    const messages = await Message.find(query)
+    // Nếu có cursor: lấy các tin CŨ HƠN cursor (ngược lịch sử)
+    if (cursor) {
+      const [cursorCreatedAt, cursorId] = String(cursor).split('|');
+      if (cursorCreatedAt && cursorId) {
+        query.$or = [
+          { createdAt: { $lt: new Date(cursorCreatedAt) } },
+          { createdAt: new Date(cursorCreatedAt), _id: { $lt: new mongoose.Types.ObjectId(cursorId) } },
+        ];
+      }
+    }
+
+    // Lấy thêm 1 tin để biết còn trang cũ hơn nữa hay không
+    const take = limit + 1;
+    const docs = await Message.find(query)
       .populate('senderId', 'username fullName avatar')
       .populate('receiverId', 'username fullName avatar')
       .populate('reactions.userId', 'username fullName avatar')
-      .sort({ createdAt: 1 })
-      .skip(skip)
-      .limit(limit);
+      // Sort 2 key: createdAt + _id để thứ tự luôn ổn định & tie-breaker duy nhất
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(take);
 
-    const total = await Message.countDocuments(query);
+    const hasMore = docs.length > limit;
+    const pageDocs = hasMore ? docs.slice(0, limit) : docs;
+
+    // Trả về theo thứ tự cũ -> mới để FE render được ngay
+    const messages = pageDocs.reverse();
+
+    // Cursor cho trang CŨ HƠN tiếp theo = tin cũ nhất trong trang này
+    const oldest = messages[0];
+    const nextCursor = oldest
+      ? `${oldest.createdAt.toISOString()}|${oldest._id.toString()}`
+      : null;
 
     return {
       messages,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
+      hasMore,
+      nextCursor,
+      limit,
     };
   }
 

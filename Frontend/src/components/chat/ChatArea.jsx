@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { ImageViewerModal } from '../modals/ImageViewerModal';
@@ -13,6 +13,9 @@ export const ChatArea = ({
   conversation,
   messages,
   loadingMessages,
+  loadingMore,
+  hasMore,
+  onLoadMoreMessages,
   onSendMessage,
   onRetryMessage,
   onRecallMessage,
@@ -39,15 +42,77 @@ export const ChatArea = ({
   });
 
   const messagesEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const prevScrollHeightRef = useRef(0);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
   const partner = extractPartner(conversation, user);
   const partnerId = partner?._id || partner?.id;
   const isOnline = isUserOnline(partnerId);
 
-  // Auto scroll to bottom on messages update
+  const scrollToBottom = useCallback((behavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
+
+  // Guard chống gọi load-more trùng nhiều lần khi scroll liên tục
+  const topLoadingRef = useRef(false);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+    if (!loadingMore) topLoadingRef.current = false;
+  }, [loadingMore]);
+
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    setIsAtBottom(distanceToBottom <= 120);
+
+    // Auto-load older messages when scrolled near the top
+    if (hasMore && !loadingMore && !topLoadingRef.current && container.scrollTop <= 150) {
+      topLoadingRef.current = true;
+      onLoadMoreMessages(conversation?._id);
+    }
+  }, [hasMore, loadingMore, onLoadMoreMessages, conversation?._id]);
+
+  // Auto-scroll to bottom when entering a new conversation or on message updates IF already near bottom
+  useEffect(() => {
+    if (isAtBottom) {
+      scrollToBottom('smooth');
+    }
+  }, [messages, isTyping, isAtBottom, scrollToBottom]);
+
+  // Open new conversation: always jump to the very bottom (reset position)
+  const lastConvIdRef = useRef(null);
+  useEffect(() => {
+    if (conversation?._id && conversation._id !== lastConvIdRef.current) {
+      lastConvIdRef.current = conversation._id;
+      setIsAtBottom(true);
+      // Dùng rAF để đảm bảo scroll sau khi danh sách đã render đủ tin mới
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => scrollToBottom('auto'));
+      });
+    }
+  }, [conversation?._id, scrollToBottom, messages]);
+
+  // Preserve scroll position when prepending older messages
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (loadingMore && container) {
+      prevScrollHeightRef.current = container.scrollHeight;
+    }
+  }, [loadingMore]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!loadingMore && prevScrollHeightRef.current && container) {
+      const heightDiff = container.scrollHeight - prevScrollHeightRef.current;
+      container.scrollTop = heightDiff;
+      prevScrollHeightRef.current = 0;
+    }
+  }, [loadingMore, messages]);
+
+  const handleLoadMore = () => {
+    onLoadMoreMessages(conversation?._id);
+  };
 
   // Mark as read when entering conversation
   useEffect(() => {
@@ -79,6 +144,9 @@ export const ChatArea = ({
       <MessageList
         messages={messages}
         loadingMessages={loadingMessages}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
+        onLoadMoreMessages={handleLoadMore}
         user={user}
         partner={partner}
         partnerId={partnerId}
@@ -86,6 +154,10 @@ export const ChatArea = ({
         isOnline={isOnline}
         isTyping={isTyping}
         messagesEndRef={messagesEndRef}
+        scrollContainerRef={scrollContainerRef}
+        handleScroll={handleScroll}
+        isAtBottom={isAtBottom}
+        onScrollToBottom={() => scrollToBottom('smooth')}
         onImageClick={(url) => {
           setViewerImage(url);
           setIsViewerOpen(true);

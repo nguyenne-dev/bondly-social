@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Loader2, AlertCircle, RefreshCw, CheckCheck, Check } from 'lucide-react';
 
-export const MessageStatus = ({ status, isRead, onRetry }) => {
+export const MessageStatus = memo(({ status, isRead, onRetry }) => {
   if (status === 'sending') {
     return (
       <span
@@ -89,6 +89,6 @@ export const MessageStatus = ({ status, isRead, onRetry }) => {
       <span style={{ fontSize: '0.68rem' }}>Đã gửi</span>
     </span>
   );
-};
+});
 
 export default MessageStatus;

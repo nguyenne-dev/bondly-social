@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -33,12 +33,16 @@ export const Sidebar = ({
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Lọc cuộc hội thoại theo tên bạn chat
-  const filteredConversations = conversations.filter((conv) => {
-    const partner = extractPartner(conv, user);
-    const partnerName = partner?.fullName || partner?.username || '';
-    return partnerName.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  // Lọc cuộc hội thoại theo tên bạn chat (memoized)
+  const filteredConversations = useMemo(() => {
+    if (!searchTerm.trim()) return conversations;
+    const term = searchTerm.toLowerCase();
+    return conversations.filter((conv) => {
+      const partner = extractPartner(conv, user);
+      const partnerName = partner?.fullName || partner?.username || '';
+      return partnerName.toLowerCase().includes(term);
+    });
+  }, [conversations, searchTerm, user]);
 
   return (
     <div className="sidebar-container">

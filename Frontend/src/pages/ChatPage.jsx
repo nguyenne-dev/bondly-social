@@ -62,6 +62,8 @@ export const ChatPage = () => {
     messages,
     setMessages,
     loadingMessages,
+    loadingMore,
+    hasMore,
     typingPartnerId,
     setTypingPartnerId,
     handleSendMessage,
@@ -69,6 +71,7 @@ export const ChatPage = () => {
     handleRecallMessage,
     handleReactMessage,
     handleDeleteMessageForMe,
+    loadMoreMessages,
   } = useChat({
     user,
     activeConversation,
@@ -229,6 +232,9 @@ export const ChatPage = () => {
           conversation={activeConversation}
           messages={messages}
           loadingMessages={loadingMessages}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          onLoadMoreMessages={loadMoreMessages}
           onSendMessage={handleSendMessage}
           onRetryMessage={handleRetryMessage}
           onRecallMessage={handleRecallMessage}

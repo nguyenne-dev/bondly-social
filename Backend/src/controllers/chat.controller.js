@@ -54,18 +54,18 @@ exports.getOrCreateConversation = async (req, res) => {
   }
 };
 
-// Lấy danh sách tin nhắn của 1 cuộc trò chuyện
+// Lấy danh sách tin nhắn của 1 cuộc trò chuyện (cursor-based pagination)
 exports.getMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 50;
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 200);
+    const cursor = req.query.cursor || null;
 
     if (!conversationId) {
       return responseNG(res, 'Vui lòng cung cấp ID cuộc trò chuyện', 400);
     }
 
-    const data = await chatService.getConversationMessages(conversationId, page, limit, req.user._id);
+    const data = await chatService.getConversationMessages(conversationId, limit, cursor, req.user._id);
     return responseOK(res, 'Lấy tin nhắn thành công', data);
   } catch (err) {
     console.error('Lỗi khi lấy tin nhắn:', err);

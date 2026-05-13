@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Trash2, RotateCcw } from 'lucide-react';
 import { EMOJI_LIST } from '../../utils/constants';
 
-export const MessageActions = ({
+export const MessageActions = memo(({
   isMe,
   onReact,
   onDeleteForMe,
@@ -16,6 +16,7 @@ export const MessageActions = ({
           key={emoji}
           onClick={() => onReact && onReact(emoji)}
           className="message-action-emoji"
+          aria-label={`Thả biểu cảm ${emoji}`}
         >
           {emoji}
         </button>
@@ -28,6 +29,7 @@ export const MessageActions = ({
           className="btn-icon"
           style={{ width: '26px', height: '26px', color: 'var(--text-subtle)' }}
           title="Xóa ở phía bạn"
+          aria-label="Xóa tin nhắn ở phía bạn"
         >
           <Trash2 size={13} />
         </button>
@@ -40,12 +42,13 @@ export const MessageActions = ({
           className="btn-icon"
           style={{ width: '26px', height: '26px', color: 'var(--danger)' }}
           title="Thu hồi tin nhắn với tất cả"
+          aria-label="Thu hồi tin nhắn với tất cả"
         >
           <RotateCcw size={13} />
         </button>
       )}
     </div>
   );
-};
+});
 
 export default MessageActions;

@@ -20,6 +20,7 @@ export const ChatHeader = ({
             className="btn-icon mobile-back-btn"
             style={{ width: '38px', height: '38px', borderRadius: '12px', flexShrink: 0 }}
             title="Quay lại danh sách hội thoại"
+            aria-label="Quay lại danh sách hội thoại"
           >
             <ArrowLeft size={18} />
           </button>
@@ -64,6 +65,7 @@ export const ChatHeader = ({
           className="btn-icon"
           style={{ width: '36px', height: '36px' }}
           title="Thông tin chi tiết"
+          aria-label="Xem thông tin chi tiết người dùng"
         >
           <Info size={18} />
         </button>

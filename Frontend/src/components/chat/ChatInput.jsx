@@ -162,6 +162,7 @@ export const ChatInput = ({
           onClick={() => fileInputRef.current?.click()}
           className="btn-icon"
           title="Đính kèm hình ảnh"
+          aria-label="Đính kèm hình ảnh"
           disabled={uploadingImage}
         >
           <ImageIcon size={18} />
@@ -172,6 +173,7 @@ export const ChatInput = ({
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
           className="btn-icon"
           title="Thả Emoji"
+          aria-label="Mở bảng chọn emoji"
         >
           <Smile size={18} />
         </button>
@@ -210,6 +212,7 @@ export const ChatInput = ({
           className="btn btn-primary"
           style={{ height: '44px', padding: '0 20px' }}
           disabled={(!inputText.trim() && !selectedImage) || uploadingImage}
+          aria-label="Gửi tin nhắn"
         >
           <Send size={18} />
         </button>

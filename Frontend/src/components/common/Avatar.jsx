@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { getAvatarUrl } from '../../utils/avatar';
 
-export const Avatar = ({
+export const Avatar = memo(({
   user,
   src,
   alt,
@@ -37,6 +37,7 @@ export const Avatar = ({
       <img
         src={avatarSrc}
         alt={altText}
+        loading="lazy"
         style={{
           width: '100%',
           height: '100%',
@@ -61,6 +62,6 @@ export const Avatar = ({
       )}
     </div>
   );
-};
+});
 
 export default Avatar;

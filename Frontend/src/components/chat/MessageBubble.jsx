@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import MessageStatus from './MessageStatus';
 import MessageActions from './MessageActions';
 import { formatTime } from '../../utils/date';
 
-export const MessageBubble = ({
+export const MessageBubble = memo(({
   msg,
   isMe,
+  grouped = false,
   onImageClick,
   onReactMessage,
   onDeleteForMe,
@@ -24,15 +25,14 @@ export const MessageBubble = ({
         flexDirection: 'column',
         alignItems: isMe ? 'flex-end' : 'flex-start',
         position: 'relative',
+        ...(grouped ? { marginTop: '2px' } : {}),
       }}
     >
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          flexDirection: isMe ? 'row-reverse' : 'row',
+          position: 'relative',
           maxWidth: '75%',
+          width: 'fit-content',
         }}
       >
         {/* Message Bubble */}
@@ -40,7 +40,11 @@ export const MessageBubble = ({
           style={{
             padding: msg.media?.url ? '8px' : '12px 18px',
             borderRadius: isMe
-              ? '18px 18px 4px 18px'
+              ? grouped
+                ? '18px 4px 4px 18px'
+                : '18px 18px 4px 18px'
+              : grouped
+              ? '4px 18px 18px 4px'
               : '18px 18px 18px 4px',
             background: isRecalled
               ? 'var(--bg-subtle)'
@@ -118,18 +122,28 @@ export const MessageBubble = ({
           )}
         </div>
 
-        {/* Hover Quick Action Buttons */}
+        {/* Hover Quick Action Buttons - Positioned Absolute so it NEVER squishes the message bubble */}
         {isHovered && !isRecalled && (
-          <MessageActions
-            isMe={isMe}
-            onReact={onReactMessage}
-            onDeleteForMe={onDeleteForMe}
-            onRecall={onRecallMessage}
-          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '-16px',
+              right: isMe ? '4px' : 'auto',
+              left: isMe ? 'auto' : '4px',
+              zIndex: 20,
+            }}
+          >
+            <MessageActions
+              isMe={isMe}
+              onReact={onReactMessage}
+              onDeleteForMe={onDeleteForMe}
+              onRecall={onRecallMessage}
+            />
+          </div>
         )}
       </div>
 
-      {/* Timestamp & Read Status */}
+      {/* Timestamp & Read Status - ẩn khi grouped (chỉ hiện khi hover) */}
       <div
         style={{
           display: 'flex',
@@ -138,6 +152,10 @@ export const MessageBubble = ({
           fontSize: '0.72rem',
           color: 'var(--text-subtle)',
           marginTop: '4px',
+          opacity: grouped && !isHovered ? 0 : 1,
+          height: grouped && !isHovered ? 0 : 'auto',
+          overflow: 'hidden',
+          transition: 'opacity 0.15s ease',
         }}
       >
         <span>{formatTime(msg.createdAt)}</span>
@@ -151,6 +169,6 @@ export const MessageBubble = ({
       </div>
     </div>
   );
-};
+});
 
 export default MessageBubble;

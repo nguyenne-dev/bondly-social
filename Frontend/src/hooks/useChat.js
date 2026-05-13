@@ -15,16 +15,31 @@ export const useChat = ({
   const { addToast } = useToast();
   const [messages, setMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
   const [typingPartnerId, setTypingPartnerId] = useState(null);
 
-  // Fetch Messages for active conversation
+  const MESSAGE_LIMIT = 100;
+
+  // Ngăn prepend tin trùng (an toàn nếu có overlap giữa các trang)
+  const mergeOlderMessages = (older, prev) => {
+    const existingIds = new Set(prev.map((m) => m._id));
+    const unique = older.filter((m) => !existingIds.has(m._id));
+    return [...unique, ...prev];
+  };
+
+  // Fetch Messages for active conversation (trang mới nhất, không cần cursor)
   const fetchMessages = useCallback(async (convId) => {
     if (!convId) return;
     try {
       setLoadingMessages(true);
-      const res = await chatApi.getMessages(convId, 100);
+      setNextCursor(null);
+      const res = await chatApi.getMessages(convId, MESSAGE_LIMIT, null);
       const msgList = res?.data?.messages || [];
       setMessages(msgList);
+      setHasMore(Boolean(res?.data?.hasMore));
+      setNextCursor(res?.data?.nextCursor || null);
     } catch (err) {
       console.error('Lỗi tải tin nhắn:', err);
       addToast('Không thể tải lịch sử tin nhắn', 'error');
@@ -33,12 +48,34 @@ export const useChat = ({
     }
   }, [addToast]);
 
+  // Load older messages dùng cursor của tin cũ nhất đã tải
+  const loadMoreMessages = useCallback(async (convId) => {
+    if (!convId || loadingMore) return;
+    try {
+      setLoadingMore(true);
+      const res = await chatApi.getMessages(convId, MESSAGE_LIMIT, nextCursor);
+      const olderMessages = res?.data?.messages || [];
+      setMessages((prev) => mergeOlderMessages(olderMessages, prev));
+      setHasMore(Boolean(res?.data?.hasMore));
+      setNextCursor(res?.data?.nextCursor || null);
+    } catch (err) {
+      console.error('Lỗi tải thêm tin nhắn:', err);
+      addToast('Không thể tải thêm tin nhắn', 'error');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [nextCursor, loadingMore, addToast]);
+
   // When active conversation changes, fetch its messages
   useEffect(() => {
     if (activeConversation?._id) {
+      setHasMore(false);
+      setNextCursor(null);
       fetchMessages(activeConversation._id);
     } else {
       setMessages([]);
+      setHasMore(false);
+      setNextCursor(null);
     }
   }, [activeConversation?._id, fetchMessages]);
 
@@ -180,9 +217,12 @@ export const useChat = ({
     messages,
     setMessages,
     loadingMessages,
+    loadingMore,
+    hasMore,
     typingPartnerId,
     setTypingPartnerId,
     fetchMessages,
+    loadMoreMessages,
     handleSendMessage,
     handleRetryMessage,
     handleRecallMessage,

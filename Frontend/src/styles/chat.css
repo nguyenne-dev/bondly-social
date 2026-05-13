@@ -114,10 +114,13 @@
   align-items: center;
   gap: 4px;
   background-color: var(--bg-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   padding: 4px 8px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
 }
 
 .message-action-emoji {
@@ -174,4 +177,111 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+/* Date Separator between message groups */
+.chat-date-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16px 0 8px;
+  position: relative;
+}
+
+.chat-date-separator::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--border);
+}
+
+.chat-date-separator span {
+  position: relative;
+  z-index: 1;
+  background-color: var(--bg-app);
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+/* Load older messages indicator (top of list) */
+.chat-load-more-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 0 4px;
+}
+
+.chat-load-more-wrap .flex-center {
+  padding: 8px;
+}
+
+/* End-of-history contact info header (Facebook/Messenger style) */
+.chat-contact-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 28px 24px 18px;
+  gap: 8px;
+}
+
+.chat-contact-header h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.chat-contact-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+.chat-contact-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  margin-top: 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Scroll-to-bottom FAB */
+.chat-scroll-bottom-fab {
+  position: absolute;
+  right: 20px;
+  bottom: 96px;
+  z-index: 30;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.chat-scroll-bottom-fab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: var(--primary-light);
 }
