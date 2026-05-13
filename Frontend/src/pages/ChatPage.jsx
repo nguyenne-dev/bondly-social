@@ -1,19 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useToast } from '../components/common/Toast';
-import { api } from '../api/client';
 import Sidebar from '../components/chat/Sidebar';
 import ChatArea from '../components/chat/ChatArea';
 import ProfileDrawer from '../components/chat/ProfileDrawer';
 import FriendRequestsModal from '../components/modals/FriendRequestsModal';
 import SearchUsersModal from '../components/modals/SearchUsersModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
+import { extractPartner } from '../utils/partner';
+import { useMobile } from '../hooks/useMobile';
+import { useConversations } from '../hooks/useConversations';
+import { useFriends } from '../hooks/useFriends';
+import { useChat } from '../hooks/useChat';
 
 export const ChatPage = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { addToast } = useToast();
+  const isMobile = useMobile(768);
+
   const {
     sendMessageSocket,
     recallMessageSocket,
@@ -27,25 +34,55 @@ export const ChatPage = () => {
     setOnReactionUpdated,
     setOnFriendRequest,
   } = useSocket();
-  const { addToast } = useToast();
 
-  // State
-  const [conversations, setConversations] = useState([]);
-  const [activeConversation, setActiveConversation] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [loadingMessages, setLoadingMessages] = useState(false);
+  // 1. Conversations state & actions
+  const {
+    conversations,
+    activeConversation,
+    setActiveConversation,
+    fetchConversations,
+    handleStartChatWithUser,
+  } = useConversations();
+
+  // 2. Friends state & actions
+  const {
+    incomingRequests,
+    sentRequests,
+    friendsList,
+    loadingRequests,
+    fetchFriendRequests,
+    handleAcceptRequest,
+    handleRejectRequest,
+    handleCancelRequest,
+    executeUnfriend,
+  } = useFriends();
+
+  // 3. Chat messages state & actions
+  const {
+    messages,
+    setMessages,
+    loadingMessages,
+    typingPartnerId,
+    setTypingPartnerId,
+    handleSendMessage,
+    handleRetryMessage,
+    handleRecallMessage,
+    handleReactMessage,
+    handleDeleteMessageForMe,
+  } = useChat({
+    user,
+    activeConversation,
+    setActiveConversation,
+    sendMessageSocket,
+    recallMessageSocket,
+    reactMessageSocket,
+    fetchConversations,
+  });
+
+  // UI Drawer & Modals state
   const [showProfileDrawer, setShowProfileDrawer] = useState(false);
-
-  // Friend Requests & Modals State
   const [showRequestsModal, setShowRequestsModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [incomingRequests, setIncomingRequests] = useState([]);
-  const [sentRequests, setSentRequests] = useState([]);
-  const [friendsList, setFriendsList] = useState([]);
-  const [loadingRequests, setLoadingRequests] = useState(false);
-  const [typingPartnerId, setTypingPartnerId] = useState(null);
-
-  // Confirm Modal state
   const [confirmModalConfig, setConfirmModalConfig] = useState({
     isOpen: false,
     title: '',
@@ -55,70 +92,6 @@ export const ChatPage = () => {
     confirmType: 'danger',
     onConfirm: () => {},
   });
-
-  // Fetch Conversations List
-  const fetchConversations = useCallback(async () => {
-    try {
-      const res = await api.get('chat/conversations');
-      const data = Array.isArray(res?.data) ? res.data : [];
-      setConversations(data);
-      return data;
-    } catch (err) {
-      console.error('Lỗi khi tải danh sách hội thoại:', err);
-      return [];
-    }
-  }, []);
-
-  // Fetch Messages for active conversation
-  const fetchMessages = useCallback(async (convId) => {
-    if (!convId) return;
-    try {
-      setLoadingMessages(true);
-      const res = await api.get(`chat/messages/${convId}?limit=100`);
-      const msgList = res?.data?.messages || [];
-      setMessages(msgList);
-    } catch (err) {
-      console.error('Lỗi tải tin nhắn:', err);
-      addToast('Không thể tải lịch sử tin nhắn', 'error');
-    } finally {
-      setLoadingMessages(false);
-    }
-  }, [addToast]);
-
-  // Fetch Friend Requests & Friends List
-  const fetchFriendRequests = useCallback(async () => {
-    try {
-      setLoadingRequests(true);
-      const [incoming, sent, friends] = await Promise.all([
-        api.get('friend-request/received').catch(() => ({ data: [] })),
-        api.get('friend-request/sent').catch(() => ({ data: [] })),
-        api.get('friend-request/friends').catch(() => ({ data: [] })),
-      ]);
-
-      setIncomingRequests(Array.isArray(incoming?.data) ? incoming.data : []);
-      setSentRequests(Array.isArray(sent?.data) ? sent.data : []);
-      setFriendsList(Array.isArray(friends?.data) ? friends.data : []);
-    } catch (err) {
-      console.error('Lỗi tải danh sách bạn bè / lời mời:', err);
-    } finally {
-      setLoadingRequests(false);
-    }
-  }, []);
-
-  // Initial Load
-  useEffect(() => {
-    fetchConversations();
-    fetchFriendRequests();
-  }, [fetchConversations, fetchFriendRequests]);
-
-  // When active conversation changes, fetch its messages
-  useEffect(() => {
-    if (activeConversation?._id) {
-      fetchMessages(activeConversation._id);
-    } else {
-      setMessages([]);
-    }
-  }, [activeConversation?._id, fetchMessages]);
 
   // Socket Event Listeners Registry
   useEffect(() => {
@@ -180,197 +153,33 @@ export const ChatPage = () => {
       addToast(`${sender?.fullName || sender?.username} đã gửi lời mời kết bạn cho bạn!`, 'info');
       fetchFriendRequests();
     });
-  }, [activeConversation?._id, fetchConversations, fetchFriendRequests, addToast]);
+  }, [
+    activeConversation?._id,
+    fetchConversations,
+    fetchFriendRequests,
+    setMessages,
+    setTypingPartnerId,
+    setOnReceiveMessage,
+    setOnConversationUpdated,
+    setOnTyping,
+    setOnStopTyping,
+    setOnReadReceipt,
+    setOnMessageRecalled,
+    setOnReactionUpdated,
+    setOnFriendRequest,
+    addToast,
+  ]);
 
-  // Send Message handler với đầy đủ 4 trạng thái phân phối: sending -> sent -> read / failed
-  const handleSendMessage = ({ receiverId, text, media, tempIdToRetry = null }) => {
-    const isDraft = activeConversation?.isDraft || activeConversation?._id?.startsWith('draft_');
-    const convIdToSend = isDraft ? null : activeConversation?._id;
-
-    const currentUserId = user?._id || user?.id;
-    const tempId = tempIdToRetry || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`;
-
-    // 1. Tạo tin nhắn đang gửi (status = 'sending') hiển thị tức thì 0ms trên màn hình người gửi (isMe)
-    if (!tempIdToRetry) {
-      const optimisticMsg = {
-        _id: tempId,
-        tempId,
-        conversationId: convIdToSend,
-        senderId: currentUserId,
-        sender: user,
-        receiverId,
-        text: text?.trim() || '',
-        media: media || null,
-        createdAt: new Date().toISOString(),
-        isRead: false,
-        status: 'sending', // 'sending' | 'sent' | 'read' | 'failed'
-        reactions: [],
-        deletedFor: [],
-        deletedAll: false,
-      };
-
-      setMessages((prev) => [...prev, optimisticMsg]);
-    } else {
-      // Đang gửi lại tin nhắn bị lỗi
-      setMessages((prev) =>
-        prev.map((m) =>
-          (m._id === tempId || m.tempId === tempId) ? { ...m, status: 'sending' } : m
-        )
-      );
-    }
-
-    // 2. Gửi qua Socket.IO tới server
-    let isAcknowledged = false;
-    const sendTimer = setTimeout(() => {
-      if (!isAcknowledged) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            (m._id === tempId || m.tempId === tempId) ? { ...m, status: 'failed' } : m
-          )
-        );
-      }
-    }, 12000);
-
-    sendMessageSocket(
-      {
-        receiverId,
-        text,
-        media,
-        conversationId: convIdToSend,
-      },
-      (res) => {
-        isAcknowledged = true;
-        clearTimeout(sendTimer);
-
-        if (res?.success && res.data?.message) {
-          const serverMsg = {
-            ...res.data.message,
-            status: res.data.message.isRead ? 'read' : 'sent',
-          };
-
-          // Thay thế tin nhắn tạm bằng tin nhắn đã lưu trên server
-          setMessages((prev) =>
-            prev.map((m) => (m._id === tempId || m.tempId === tempId ? serverMsg : m))
-          );
-
-          // Nâng cấp từ draft conversation lên real conversation sau khi gửi tin nhắn đầu tiên
-          if (isDraft && res.data.conversationId) {
-            setActiveConversation((prev) => ({
-              ...prev,
-              _id: res.data.conversationId,
-              isDraft: false,
-            }));
-          }
-          fetchConversations();
-        } else {
-          // Báo trạng thái gửi thất bại
-          setMessages((prev) =>
-            prev.map((m) =>
-              (m._id === tempId || m.tempId === tempId) ? { ...m, status: 'failed' } : m
-            )
-          );
-          addToast(res?.message || 'Gửi tin nhắn thất bại. Vui lòng thử lại!', 'error');
-        }
-      }
-    );
-  };
-
-  // Retry send message handler
-  const handleRetryMessage = (failedMsg) => {
-    const partner = activeConversation?.participants?.find(
-      (p) => (p._id || p.id) !== (user?._id || user?.id)
-    );
-    const receiverId = failedMsg.receiverId || partner?._id || partner?.id;
-
-    handleSendMessage({
-      receiverId,
-      text: failedMsg.text,
-      media: failedMsg.media,
-      tempIdToRetry: failedMsg._id || failedMsg.tempId,
-    });
-  };
-
-  // Recall Message handler
-  const handleRecallMessage = ({ messageId, receiverId, conversationId }) => {
-    recallMessageSocket({ messageId, receiverId, conversationId }, (res) => {
-      if (res?.success) {
-        addToast('Đã thu hồi tin nhắn', 'info');
-      }
-    });
-  };
-
-  // React Message handler
-  const handleReactMessage = ({ messageId, receiverId, emoji, conversationId }) => {
-    reactMessageSocket({ messageId, receiverId, emoji, conversationId });
-  };
-
-  // Start chat with user directly (Lazy draft conversation)
-  const handleStartChatWithUser = async (partnerId) => {
-    try {
-      // 1. Kiểm tra nếu đã có cuộc hội thoại trong danh sách
-      const existing = conversations.find((c) =>
-        c.participants?.some((p) => (p._id || p.id) === partnerId)
-      );
-
-      if (existing) {
-        setActiveConversation(existing);
-        return;
-      }
-
-      // 2. Lấy thông tin partner (hoặc draft conversation từ server)
-      const res = await api.get(`chat/conversations/partner/${partnerId}`);
-      if (res?.data) {
-        setActiveConversation(res.data);
-        setMessages([]);
-      }
-    } catch (err) {
-      addToast('Không thể mở cuộc trò chuyện', 'error');
-    }
-  };
-
-  // Tự động mở chat khi chuyển hướng từ thanh Header search (/chat?partnerId=...)
+  // Tự động mở chat khi chuyển hướng từ URL (/chat?partnerId=...)
   const targetPartnerId = searchParams.get('partnerId');
   useEffect(() => {
     if (targetPartnerId) {
       handleStartChatWithUser(targetPartnerId);
       setSearchParams({}, { replace: true });
     }
-  }, [targetPartnerId, conversations.length]);
+  }, [targetPartnerId, conversations.length, handleStartChatWithUser, setSearchParams]);
 
-  // Accept Friend Request
-  const handleAcceptRequest = async (requestId) => {
-    try {
-      await api.put(`friend-request/accept/${requestId}`);
-      addToast('Đã chấp nhận lời mời kết bạn!', 'success');
-      fetchFriendRequests();
-    } catch (err) {
-      addToast(err.message || 'Lỗi khi chấp nhận kết bạn', 'error');
-    }
-  };
-
-  // Reject Friend Request
-  const handleRejectRequest = async (requestId) => {
-    try {
-      await api.put(`friend-request/reject/${requestId}`);
-      addToast('Đã từ chối lời mời', 'info');
-      fetchFriendRequests();
-    } catch (err) {
-      addToast(err.message || 'Lỗi khi từ chối', 'error');
-    }
-  };
-
-  // Cancel Sent Request
-  const handleCancelRequest = async (requestId) => {
-    try {
-      await api.delete(`friend-request/cancel/${requestId}`);
-      addToast('Đã hủy lời mời kết bạn', 'info');
-      fetchFriendRequests();
-    } catch (err) {
-      addToast(err.message || 'Lỗi khi hủy lời mời', 'error');
-    }
-  };
-
-  // Unfriend
+  // Unfriend confirmation modal
   const handleUnfriend = (friendId) => {
     setConfirmModalConfig({
       isOpen: true,
@@ -380,42 +189,15 @@ export const ChatPage = () => {
       cancelText: 'Hủy',
       confirmType: 'danger',
       onConfirm: async () => {
-        try {
-          await api.delete(`friend-request/unfriend/${friendId}`);
-          addToast('Đã hủy kết bạn', 'info');
+        const success = await executeUnfriend(friendId);
+        if (success) {
           setShowProfileDrawer(false);
-          fetchFriendRequests();
-        } catch (err) {
-          addToast(err.message || 'Lỗi khi hủy kết bạn', 'error');
         }
       },
     });
   };
 
-  // Mobile responsive detection
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Delete message for me (soft delete)
-  const handleDeleteMessageForMe = async (messageId) => {
-    try {
-      await api.delete(`chat/messages/delete-for-me/${messageId}`);
-      setMessages((prev) => prev.filter((m) => m._id !== messageId));
-      addToast('Đã xóa tin nhắn ở phía bạn', 'info');
-    } catch (err) {
-      console.error('Lỗi khi xóa tin nhắn:', err);
-      addToast(err.message || 'Lỗi khi xóa tin nhắn', 'error');
-    }
-  };
-
-  const partner = activeConversation?.participants?.find(
-    (p) => (p._id || p.id) !== (user?._id || user?.id)
-  );
+  const partner = extractPartner(activeConversation, user);
 
   return (
     <div

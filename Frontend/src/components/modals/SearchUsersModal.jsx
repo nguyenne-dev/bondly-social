@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import { Search, UserPlus, MessageSquare, Check, Loader2 } from 'lucide-react';
-import { api } from '../../api/client';
+import { userApi } from '../../api/user.api';
+import { friendApi } from '../../api/friend.api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../common/Toast';
+import Avatar from '../common/Avatar';
 
 export const SearchUsersModal = ({
   isOpen,
@@ -24,9 +26,9 @@ export const SearchUsersModal = ({
 
     try {
       setSearching(true);
-      const res = await api.get(`user/search?q=${encodeURIComponent(searchTerm.trim())}`).catch(async () => {
+      const res = await userApi.searchUsers(searchTerm.trim()).catch(async () => {
         // Fallback to get all users if search route differs
-        return await api.get('user/all');
+        return await userApi.getAllUsers();
       });
 
       const usersList = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
@@ -45,7 +47,7 @@ export const SearchUsersModal = ({
 
   const handleSendFriendRequest = async (targetId) => {
     try {
-      await api.post('friend-request/send', { receiverId: targetId });
+      await friendApi.send(targetId);
       setSentMap((prev) => ({ ...prev, [targetId]: true }));
       addToast('Đã gửi lời mời kết bạn!', 'success');
     } catch (err) {
@@ -114,16 +116,7 @@ export const SearchUsersModal = ({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <img
-                    src={
-                      u.avatar ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        u.fullName || u.username || 'User'
-                      )}&background=06b6d4&color=fff`
-                    }
-                    alt={u.fullName}
-                    style={{ width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover' }}
-                  />
+                  <Avatar user={u} size={42} />
                   <div>
                     <h4 style={{ fontSize: '0.92rem', fontWeight: 700 }}>{u.fullName || u.username}</h4>
                     <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>@{u.username}</p>

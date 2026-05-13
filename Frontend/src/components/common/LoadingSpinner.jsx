@@ -14,14 +14,8 @@ export const LoadingSpinner = ({ size = 28, message = 'Đang tải dữ liệu..
         color: 'var(--text-muted)',
       }}
     >
-      <Loader2 size={size} className="animate-pulse" color="var(--primary)" style={{ animation: 'spin 1s linear infinite' }} />
+      <Loader2 size={size} className="animate-spin" color="var(--primary)" />
       {message && <p style={{ fontSize: '0.88rem', fontWeight: 500 }}>{message}</p>}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };

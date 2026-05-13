@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import { UserCheck, UserX, Clock, Check, X } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
+import Avatar from '../common/Avatar';
 
 export const FriendRequestsModal = ({
   isOpen,
@@ -83,21 +84,7 @@ export const FriendRequestsModal = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <img
-                      src={
-                        sender?.avatar ||
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          sender?.fullName || 'User'
-                        )}&background=06b6d4&color=fff`
-                      }
-                      alt={sender?.fullName}
-                      style={{
-                        width: '42px',
-                        height: '42px',
-                        borderRadius: '12px',
-                        objectFit: 'cover',
-                      }}
-                    />
+                    <Avatar user={sender} size={42} />
                     <div>
                       <h4 style={{ fontSize: '0.92rem', fontWeight: 700 }}>{sender?.fullName}</h4>
                       <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -151,21 +138,7 @@ export const FriendRequestsModal = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <img
-                      src={
-                        receiver?.avatar ||
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          receiver?.fullName || 'User'
-                        )}&background=06b6d4&color=fff`
-                      }
-                      alt={receiver?.fullName}
-                      style={{
-                        width: '42px',
-                        height: '42px',
-                        borderRadius: '12px',
-                        objectFit: 'cover',
-                      }}
-                    />
+                    <Avatar user={receiver} size={42} />
                     <div>
                       <h4 style={{ fontSize: '0.92rem', fontWeight: 700 }}>{receiver?.fullName}</h4>
                       <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>

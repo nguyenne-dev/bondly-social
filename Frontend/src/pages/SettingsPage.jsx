@@ -6,7 +6,10 @@ import { ImageViewerModal } from '../components/modals/ImageViewerModal';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../components/common/Toast';
-import { api } from '../api/client';
+import { userApi } from '../api/user.api';
+import { uploadApi } from '../api/upload.api';
+import { getAvatarUrl } from '../utils/avatar';
+import { AVATAR_PRESETS } from '../utils/constants';
 import { 
   User, 
   Lock, 
@@ -66,7 +69,7 @@ export const SettingsPage = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const res = await api.put('user/profile', profileData);
+      const res = await userApi.updateProfile(profileData);
       if (res?.data) {
         updateUser(res.data);
       } else {
@@ -93,7 +96,7 @@ export const SettingsPage = () => {
 
     try {
       setLoading(true);
-      await api.post('user/me/change-pass', { newPass: passData.newPass });
+      await userApi.changePassword({ newPass: passData.newPass });
       addToast('Đổi mật khẩu thành công!', 'success');
       setPassData({ newPass: '', confirmPass: '' });
     } catch (err) {
@@ -122,7 +125,7 @@ export const SettingsPage = () => {
       setUploadingAvatar(true);
       addToast('Đang tải ảnh lên máy chủ Cloudinary...', 'info');
 
-      const res = await api.upload('upload/avatar', file);
+      const res = await uploadApi.uploadAvatar(file);
       if (res?.data?.avatarUrl) {
         setProfileData((prev) => ({ ...prev, avatar: res.data.avatarUrl }));
         if (res.data.user) {
@@ -137,16 +140,6 @@ export const SettingsPage = () => {
       setUploadingAvatar(false);
     }
   };
-
-  // Avatar presets
-  const AVATAR_PRESETS = [
-    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1628157582853-a796fa650a6a?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-  ];
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-app)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column' }}>
@@ -270,7 +263,7 @@ export const SettingsPage = () => {
                       />
                       <div
                         onClick={() => {
-                          const currentAvt = profileData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.fullName || user?.username || 'User')}&background=06b6d4&color=fff`;
+                          const currentAvt = getAvatarUrl({ ...profileData, username: user?.username });
                           setViewerImage(currentAvt);
                           setIsViewerOpen(true);
                         }}
@@ -278,12 +271,7 @@ export const SettingsPage = () => {
                         title="Bấm để xem ảnh phóng to toàn màn hình"
                       >
                         <img
-                          src={
-                            profileData.avatar ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                              profileData.fullName || user?.username || 'User'
-                            )}&background=06b6d4&color=fff`
-                          }
+                          src={getAvatarUrl({ ...profileData, username: user?.username })}
                           alt="Avatar"
                           style={{
                             width: '84px',

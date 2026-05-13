@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { api } from '../../api/client';
+import { userApi } from '../../api/user.api';
+import Avatar from '../common/Avatar';
 import { 
   Sparkles, 
   Link2,
@@ -55,7 +56,7 @@ export const Navbar = () => {
     const timer = setTimeout(async () => {
       try {
         setIsSearching(true);
-        const res = await api.get(`user/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        const res = await userApi.searchUsers(searchQuery.trim());
         setSearchResults(Array.isArray(res?.data) ? res.data : []);
       } catch (err) {
         console.error('Lỗi tìm kiếm user trên header:', err);
@@ -281,16 +282,7 @@ export const Navbar = () => {
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                          <img
-                            src={
-                              u.avatar ||
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                u.fullName || u.username || 'User'
-                              )}&background=06b6d4&color=fff`
-                            }
-                            alt={u.fullName}
-                            style={{ width: '34px', height: '34px', borderRadius: '10px', objectFit: 'cover' }}
-                          />
+                          <Avatar user={u} size={34} borderRadius="10px" />
                           <div style={{ overflow: 'hidden' }}>
                             <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {u.fullName || u.username}
@@ -363,16 +355,7 @@ export const Navbar = () => {
                   boxSizing: 'border-box',
                 }}
               >
-                <img
-                  src={
-                    user?.avatar ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      user?.fullName || user?.username || 'User'
-                    )}&background=06b6d4&color=fff`
-                  }
-                  alt={user?.fullName}
-                  style={{ width: '30px', height: '30px', borderRadius: '8px', objectFit: 'cover' }}
-                />
+                <Avatar user={user} size={30} borderRadius="8px" />
                 <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {user?.fullName || user?.username}
                 </span>

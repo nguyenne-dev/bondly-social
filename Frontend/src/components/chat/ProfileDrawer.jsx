@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Mail, Phone, Calendar, UserX, Shield, Sparkles } from 'lucide-react';
 import { useSocket } from '../../context/SocketContext';
 import { ImageViewerModal } from '../modals/ImageViewerModal';
+import Avatar from '../common/Avatar';
+import { getAvatarUrl } from '../../utils/avatar';
 
 export const ProfileDrawer = ({ isOpen, onClose, partner, onUnfriend }) => {
   const { isUserOnline } = useSocket();
@@ -11,7 +13,7 @@ export const ProfileDrawer = ({ isOpen, onClose, partner, onUnfriend }) => {
 
   if (!isOpen || !partner) return null;
 
-  const partnerAvatar = partner.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(partner.fullName || partner.username || 'User')}&background=06b6d4&color=fff`;
+  const partnerAvatar = getAvatarUrl(partner);
 
   return (
     <div
@@ -47,37 +49,16 @@ export const ProfileDrawer = ({ isOpen, onClose, partner, onUnfriend }) => {
       <div style={{ padding: '24px 20px', overflowY: 'auto', flex: 1 }}>
         {/* Avatar & Name */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div
+          <Avatar
+            user={partner}
+            src={partnerAvatar}
+            size={80}
+            isOnline={isOnline}
             onClick={() => setIsViewerOpen(true)}
-            style={{ position: 'relative', display: 'inline-block', marginBottom: '14px', cursor: 'pointer' }}
             title="Bấm để xem ảnh đại diện phóng to"
-          >
-            <img
-              src={partnerAvatar}
-              alt={partner.fullName}
-              style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: '24px',
-                objectFit: 'cover',
-                border: '2px solid var(--primary)',
-                boxShadow: 'var(--shadow-md)',
-                transition: 'opacity 0.2s',
-              }}
-            />
-            {isOnline && (
-              <span
-                className="online-dot"
-                style={{
-                  position: 'absolute',
-                  bottom: '0',
-                  right: '0',
-                  width: '16px',
-                  height: '16px',
-                }}
-              />
-            )}
-          </div>
+            style={{ marginBottom: '14px' }}
+            imageStyle={{ border: '2px solid var(--primary)', boxShadow: 'var(--shadow-md)', transition: 'opacity 0.2s' }}
+          />
 
           <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{partner.fullName || partner.username}</h3>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '2px' }}>

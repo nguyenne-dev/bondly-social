@@ -1,12 +1,12 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://bondly-social.onrender.com/api';
 
-class ApiClient {
+export class ApiClient {
   constructor(baseUrl) {
     this.baseUrl = baseUrl.replace(/\/$/, '');
   }
 
   getToken() {
-    return localStorage.getItem('bondly_token') || localStorage.getItem('nexchat_token') || '';
+    return localStorage.getItem('bondly_token') || '';
   }
 
   getHeaders(customHeaders = {}) {
@@ -55,40 +55,45 @@ class ApiClient {
     }
   }
 
-  get(endpoint, headers = {}) {
-    return this.request(endpoint, { method: 'GET', headers });
+  get(endpoint, options = {}) {
+    const opts = typeof options === 'object' && !Array.isArray(options) ? options : { headers: options };
+    return this.request(endpoint, { method: 'GET', ...opts });
   }
 
-  post(endpoint, body = {}, headers = {}) {
+  post(endpoint, body = {}, options = {}) {
     const isFormData = body instanceof FormData;
+    const opts = typeof options === 'object' && !Array.isArray(options) ? options : { headers: options };
     return this.request(endpoint, {
       method: 'POST',
-      headers,
+      ...opts,
       body: isFormData ? body : JSON.stringify(body),
     });
   }
 
-  put(endpoint, body = {}, headers = {}) {
+  put(endpoint, body = {}, options = {}) {
     const isFormData = body instanceof FormData;
+    const opts = typeof options === 'object' && !Array.isArray(options) ? options : { headers: options };
     return this.request(endpoint, {
       method: 'PUT',
-      headers,
+      ...opts,
       body: isFormData ? body : JSON.stringify(body),
     });
   }
 
-  upload(endpoint, file, fieldName = 'file', extraData = {}) {
+  upload(endpoint, file, fieldName = 'file', extraData = {}, options = {}) {
     const formData = new FormData();
     formData.append(fieldName, file);
     Object.keys(extraData).forEach((key) => {
       formData.append(key, extraData[key]);
     });
-    return this.post(endpoint, formData);
+    return this.post(endpoint, formData, options);
   }
 
-  delete(endpoint, headers = {}) {
-    return this.request(endpoint, { method: 'DELETE', headers });
+  delete(endpoint, options = {}) {
+    const opts = typeof options === 'object' && !Array.isArray(options) ? options : { headers: options };
+    return this.request(endpoint, { method: 'DELETE', ...opts });
   }
 }
 
 export const api = new ApiClient(API_BASE_URL);
+export default api;

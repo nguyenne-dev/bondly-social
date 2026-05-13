@@ -4,6 +4,7 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import SoundboardWidget from '../components/common/SoundboardWidget';
 import { useAuth } from '../context/AuthContext';
+import { formatTime } from '../utils/date';
 import { 
   Sparkles, 
   Zap, 
@@ -66,7 +67,7 @@ export const HomePage = () => {
       sender: 'Bạn',
       isMe: true,
       text: demoInput.trim(),
-      time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      time: formatTime(new Date()),
       reactions: [],
     };
 

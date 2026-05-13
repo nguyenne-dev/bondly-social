@@ -15,6 +15,9 @@ import {
   Settings,
   MoreVertical
 } from 'lucide-react';
+import Avatar from '../common/Avatar';
+import { extractPartner } from '../../utils/partner';
+import { formatTime } from '../../utils/date';
 
 export const Sidebar = ({
   conversations,
@@ -32,34 +35,15 @@ export const Sidebar = ({
 
   // Lọc cuộc hội thoại theo tên bạn chat
   const filteredConversations = conversations.filter((conv) => {
-    const partner = conv.participants?.find((p) => (p._id || p.id) !== (user?._id || user?.id));
+    const partner = extractPartner(conv, user);
     const partnerName = partner?.fullName || partner?.username || '';
     return partnerName.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   return (
-    <div
-      style={{
-        width: '340px',
-        minWidth: '280px',
-        backgroundColor: 'var(--bg-sidebar)',
-        borderRight: '1px solid var(--border)',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        flexShrink: 0,
-      }}
-    >
+    <div className="sidebar-container">
       {/* 1. Brand & Current User Header */}
-      <div
-        style={{
-          padding: '16px 18px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
+      <div className="sidebar-header-bar">
         <Link
           to="/settings"
           style={{
@@ -71,29 +55,12 @@ export const Sidebar = ({
           }}
           title="Bấm để vào Cài đặt & Đổi ảnh đại diện"
         >
-          <div style={{ position: 'relative' }}>
-            <img
-              src={
-                user?.avatar ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  user?.fullName || user?.username || 'User'
-                )}&background=06b6d4&color=fff`
-              }
-              alt="My Avatar"
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '12px',
-                objectFit: 'cover',
-                border: '1.5px solid var(--primary)',
-                boxShadow: '0 2px 8px rgba(6, 182, 212, 0.3)',
-              }}
-            />
-            <span
-              className="online-dot"
-              style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '9px', height: '9px' }}
-            />
-          </div>
+          <Avatar
+            user={user}
+            size={38}
+            isOnline={true}
+            imageStyle={{ border: '1.5px solid var(--primary)', boxShadow: '0 2px 8px rgba(6, 182, 212, 0.3)' }}
+          />
           <div>
             <h2 style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
               Bond<span className="gradient-text">ly</span>
@@ -239,9 +206,7 @@ export const Sidebar = ({
           </div>
         ) : (
           filteredConversations.map((conv) => {
-            const partner = conv.participants?.find(
-              (p) => (p._id || p.id) !== (user?._id || user?.id)
-            );
+            const partner = extractPartner(conv, user);
             const partnerId = partner?._id || partner?.id;
             const isOnline = isUserOnline(partnerId);
             const isActive = activeConversation?._id === conv._id;
@@ -286,34 +251,7 @@ export const Sidebar = ({
                 }}
               >
                 {/* Avatar with Online badge */}
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <img
-                    src={
-                      partner?.avatar ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        partner?.fullName || partner?.username || 'User'
-                      )}&background=06b6d4&color=fff`
-                    }
-                    alt={partner?.fullName}
-                    style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '14px',
-                      objectFit: 'cover',
-                      border: '1px solid var(--border)',
-                    }}
-                  />
-                  {isOnline && (
-                    <span
-                      className="online-dot"
-                      style={{
-                        position: 'absolute',
-                        bottom: '-2px',
-                        right: '-2px',
-                      }}
-                    />
-                  )}
-                </div>
+                <Avatar user={partner} size={44} isOnline={isOnline} />
 
                 {/* Info preview */}
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -339,12 +277,7 @@ export const Sidebar = ({
                     </h4>
 
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-subtle)' }}>
-                      {conv.updatedAt
-                        ? new Date(conv.updatedAt).toLocaleTimeString('vi-VN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : ''}
+                      {formatTime(conv.updatedAt)}
                     </span>
                   </div>
 

@@ -1,28 +1,29 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../api/client';
+import { authApi } from '../api/auth.api';
+import { userApi } from '../api/user.api';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('bondly_user') || localStorage.getItem('nexchat_user');
+      const savedUser = localStorage.getItem('bondly_user');
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
     }
   });
 
-  const [token, setToken] = useState(() => localStorage.getItem('bondly_token') || localStorage.getItem('nexchat_token') || '');
+  const [token, setToken] = useState(() => localStorage.getItem('bondly_token') || '');
   const [loading, setLoading] = useState(true);
 
   // Sync token & user from localStorage on mount
   useEffect(() => {
     const initAuth = async () => {
-      const savedToken = localStorage.getItem('bondly_token') || localStorage.getItem('nexchat_token');
+      const savedToken = localStorage.getItem('bondly_token');
       if (savedToken) {
         try {
-          const res = await api.get('user/profile');
+          const res = await userApi.getProfile();
           if (res?.data) {
             setUser(res.data);
             localStorage.setItem('bondly_user', JSON.stringify(res.data));
@@ -39,7 +40,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (account, password) => {
-    const res = await api.post('auth/login', { account, password });
+    const res = await authApi.login({ account, password });
     if (res?.data?.token) {
       const authToken = res.data.token;
       const userData = res.data.user || res.data;
@@ -54,12 +55,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (formData) => {
-    const res = await api.post('auth/register', formData);
+    const res = await authApi.register(formData);
     return res;
   };
 
   const verifyOtp = async (email, otp) => {
-    const res = await api.post('auth/verify-otp', { email, otp });
+    const res = await authApi.verifyOtp({ email, otp });
     return res;
   };
 
@@ -68,8 +69,6 @@ export const AuthProvider = ({ children }) => {
     setToken('');
     localStorage.removeItem('bondly_token');
     localStorage.removeItem('bondly_user');
-    localStorage.removeItem('nexchat_token');
-    localStorage.removeItem('nexchat_user');
   };
 
   const updateUser = (updatedFields) => {
@@ -106,3 +105,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export default AuthContext;
