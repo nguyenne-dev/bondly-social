@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
+import { UserPlus, Check, Ban } from 'lucide-react';
 import { ImageViewerModal } from '../modals/ImageViewerModal';
 import { ConfirmModal } from '../modals/ConfirmModal';
 import ChatHeader from './ChatHeader';
@@ -24,6 +25,13 @@ export const ChatArea = ({
   onToggleProfile,
   onBack,
   isTyping,
+  isFriend,
+  incomingRequestId,
+  sentRequestId,
+  onSendFriendRequest,
+  onAcceptFriendRequest,
+  onRejectFriendRequest,
+  onCancelFriendRequest,
 }) => {
   const { user } = useAuth();
   const { isUserOnline, sendTypingSocket, sendStopTypingSocket, markAsReadSocket } = useSocket();
@@ -139,6 +147,56 @@ export const ChatArea = ({
         }}
         onToggleProfile={onToggleProfile}
       />
+
+      {/* 1b. Trạng thái kết bạn (ẩn khi đã là bạn) */}
+      {!isFriend && partnerId && (
+        <div className="chat-friend-status-bar">
+          {incomingRequestId ? (
+            <>
+              <span className="chat-friend-status-dot" style={{ color: 'var(--primary)' }}>🟡</span>
+              <span className="chat-friend-status-text">
+                {partner?.fullName || partner?.username} đã gửi lời mời kết bạn
+              </span>
+              <button
+                className="btn btn-primary chat-friend-status-btn"
+                onClick={() => onAcceptFriendRequest?.(incomingRequestId)}
+              >
+                <Check size={13} /> Xác nhận
+              </button>
+              <button
+                className="btn btn-secondary chat-friend-status-btn"
+                onClick={() => onRejectFriendRequest?.(incomingRequestId)}
+              >
+                <Ban size={13} /> Từ chối
+              </button>
+            </>
+          ) : sentRequestId ? (
+            <>
+              <span className="chat-friend-status-dot" style={{ color: '#f59e0b' }}>🕐</span>
+              <span className="chat-friend-status-text">Đã gửi lời mời kết bạn</span>
+              <button
+                className="btn btn-secondary chat-friend-status-btn"
+                onClick={() => onCancelFriendRequest?.(sentRequestId)}
+              >
+                <Ban size={13} /> Hủy lời mời
+              </button>
+            </>
+          ) : (
+            <>
+              <UserPlus size={14} className="chat-friend-status-dot" style={{ color: 'var(--primary)' }} />
+              <span className="chat-friend-status-text">
+                Chưa kết bạn — gửi lời mời để trò chuyện lâu dài
+              </span>
+              <button
+                className="btn btn-primary chat-friend-status-btn"
+                onClick={() => onSendFriendRequest?.(partnerId)}
+              >
+                <UserPlus size={13} /> Kết bạn
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* 2. Messages List & Typing Indicator */}
       <MessageList

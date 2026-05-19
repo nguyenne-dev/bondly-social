@@ -22,5 +22,8 @@ router.get("/search-user", checkAuth, userController.searchUsers);
 router.get("/friends", checkAuth, userController.getFriends);
 router.get("/friend/all", checkAuth, userController.getFriends);
 
+// Lấy public profile 1 user theo id (trang cá nhân) — để cuối để không nuốt route tên cố định
+router.get("/:id", checkAuth, userController.getUserById);
+
 module.exports = router;
 

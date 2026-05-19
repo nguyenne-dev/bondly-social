@@ -6,6 +6,7 @@ export const userApi = {
   changePassword: (passwordData, options) => api.post('user/me/change-pass', passwordData, options),
   searchUsers: (query, options) => api.get(`user/search?q=${encodeURIComponent(query)}`, options),
   getAllUsers: (options) => api.get('user/all', options),
+  getUserById: (userId, options) => api.get(`user/${userId}`, options),
 };
 
 export default userApi;

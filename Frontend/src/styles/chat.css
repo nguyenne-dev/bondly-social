@@ -34,6 +34,42 @@
   gap: 12px;
 }
 
+/* Friend status bar below chat header (hidden when already friends) */
+.chat-friend-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 24px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-subtle);
+  font-size: 0.82rem;
+  flex-shrink: 0;
+  z-index: 9;
+}
+
+.chat-friend-status-dot {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  display: inline-flex;
+}
+
+.chat-friend-status-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.chat-friend-status-btn {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 0.76rem;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .chat-header-title {
   font-size: 1.05rem;
   font-weight: 700;

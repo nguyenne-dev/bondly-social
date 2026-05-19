@@ -54,6 +54,7 @@ export const ChatPage = () => {
     handleAcceptRequest,
     handleRejectRequest,
     handleCancelRequest,
+    handleSendFriendRequest,
     executeUnfriend,
   } = useFriends();
 
@@ -201,6 +202,18 @@ export const ChatPage = () => {
   };
 
   const partner = extractPartner(activeConversation, user);
+  const partnerId = partner?._id || partner?.id;
+
+  // Trạng thái quan hệ với partner dùng cho ProfileDrawer
+  const isPartnerFriend = partnerId
+    ? friendsList.some((f) => (f._id || f.id) === partnerId)
+    : false;
+  const partnerIncomingRequest = partnerId
+    ? incomingRequests.find((r) => (r.senderId?._id || r.senderId) === partnerId) || null
+    : null;
+  const partnerSentRequest = partnerId
+    ? sentRequests.find((r) => (r.receiverId?._id || r.receiverId) === partnerId) || null
+    : null;
 
   return (
     <div
@@ -243,6 +256,13 @@ export const ChatPage = () => {
           onToggleProfile={() => setShowProfileDrawer(!showProfileDrawer)}
           onBack={isMobile ? () => setActiveConversation(null) : null}
           isTyping={typingPartnerId === (partner?._id || partner?.id)}
+          isFriend={isPartnerFriend}
+          incomingRequestId={partnerIncomingRequest?._id || null}
+          sentRequestId={partnerSentRequest?._id || null}
+          onSendFriendRequest={handleSendFriendRequest}
+          onAcceptFriendRequest={handleAcceptRequest}
+          onRejectFriendRequest={handleRejectRequest}
+          onCancelFriendRequest={handleCancelRequest}
         />
       )}
 
@@ -252,6 +272,13 @@ export const ChatPage = () => {
         onClose={() => setShowProfileDrawer(false)}
         partner={partner}
         onUnfriend={handleUnfriend}
+        onSendFriendRequest={handleSendFriendRequest}
+        onAcceptFriendRequest={handleAcceptRequest}
+        onRejectFriendRequest={handleRejectRequest}
+        onCancelFriendRequest={handleCancelRequest}
+        isFriend={isPartnerFriend}
+        incomingRequestId={partnerIncomingRequest?._id || null}
+        sentRequestId={partnerSentRequest?._id || null}
       />
 
       {/* 4. Modals */}

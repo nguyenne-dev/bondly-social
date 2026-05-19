@@ -1,15 +1,35 @@
-import React, { useState } from 'react';
-import { X, Mail, Phone, Calendar, UserX, Shield, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { X, Mail, Phone, UserX, Shield, UserPlus, Check, Ban, ExternalLink } from 'lucide-react';
 import { useSocket } from '../../context/SocketContext';
 import { ImageViewerModal } from '../modals/ImageViewerModal';
 import Avatar from '../common/Avatar';
 import { getAvatarUrl } from '../../utils/avatar';
 
-export const ProfileDrawer = ({ isOpen, onClose, partner, onUnfriend }) => {
+export const ProfileDrawer = ({
+  isOpen,
+  onClose,
+  partner,
+  onUnfriend,
+  onSendFriendRequest,
+  onAcceptFriendRequest,
+  onRejectFriendRequest,
+  onCancelFriendRequest,
+  isFriend,
+  incomingRequestId,
+  sentRequestId,
+}) => {
   const { isUserOnline } = useSocket();
+  const navigate = useNavigate();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [addCardDismissed, setAddCardDismissed] = useState(false);
   const partnerId = partner?._id || partner?.id;
   const isOnline = isUserOnline(partnerId);
+
+  // Mỗi lần mở drawer lại, hiện lại card "Kết bạn" (nếu trước đó đã bấm X)
+  useEffect(() => {
+    if (isOpen) setAddCardDismissed(false);
+  }, [isOpen]);
 
   if (!isOpen || !partner) return null;
 
@@ -47,7 +67,7 @@ export const ProfileDrawer = ({ isOpen, onClose, partner, onUnfriend }) => {
 
       {/* Profile Body */}
       <div style={{ padding: '24px 20px', overflowY: 'auto', flex: 1 }}>
-        {/* Avatar & Name */}
+        {/* Avatar & Name + Action kết bạn / hủy kết bạn ngay dưới trạng thái */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <Avatar
             user={partner}
@@ -69,6 +89,104 @@ export const ProfileDrawer = ({ isOpen, onClose, partner, onUnfriend }) => {
             <span className={`badge ${isOnline ? 'badge-primary' : 'badge-secondary'}`}>
               {isOnline ? '🟢 Đang trực tuyến' : '⚪ Đang ngoại tuyến'}
             </span>
+          </div>
+
+          {/* Trạng thái quan hệ: bạn / có lời mời đến / đã gửi lời mời / chưa có */}
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {isFriend ? (
+              <button
+                onClick={() => onUnfriend(partnerId)}
+                className="btn btn-secondary"
+                style={{ width: '100%', color: 'var(--danger)', borderColor: 'var(--danger-bg)' }}
+              >
+                <UserX size={16} /> Hủy kết bạn
+              </button>
+            ) : incomingRequestId ? (
+              <>
+                <button
+                  className="btn btn-primary"
+                  style={{ width: '100%' }}
+                  onClick={() => onAcceptFriendRequest?.(incomingRequestId)}
+                >
+                  <UserPlus size={16} /> Xác nhận kết bạn
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  style={{ width: '100%' }}
+                  onClick={() => onRejectFriendRequest?.(incomingRequestId)}
+                >
+                  <Ban size={16} /> Từ chối
+                </button>
+              </>
+            ) : sentRequestId ? (
+              <>
+                <button className="btn btn-secondary" style={{ width: '100%' }} disabled>
+                  <Check size={16} /> Đã gửi lời mời
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  style={{ width: '100%' }}
+                  onClick={() => onCancelFriendRequest?.(sentRequestId)}
+                >
+                  <Ban size={16} /> Hủy lời mời
+                </button>
+              </>
+            ) : (
+              !addCardDismissed && (
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--bg-subtle)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      marginBottom: '6px',
+                    }}
+                  >
+                    <p style={{ fontWeight: 700, fontSize: '0.92rem', textAlign: 'left' }}>
+                      Kết bạn với{' '}
+                      <span style={{ color: 'var(--primary)' }}>
+                        {partner.fullName || partner.username}
+                      </span>
+                    </p>
+                    <button
+                      onClick={() => setAddCardDismissed(true)}
+                      className="btn-icon"
+                      style={{ width: '24px', height: '24px', flexShrink: 0 }}
+                      aria-label="Đóng gợi ý kết bạn"
+                      title="Tắt gợi ý"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: '0.8rem',
+                      color: 'var(--text-muted)',
+                      lineHeight: 1.5,
+                      marginBottom: '12px',
+                      textAlign: 'left',
+                    }}
+                  >
+                    Gửi lời mời kết bạn để trò chuyện lâu dài cùng nhau nhé!
+                  </p>
+                  <button
+                    className="btn btn-primary"
+                    style={{ width: '100%' }}
+                    onClick={() => onSendFriendRequest?.(partnerId)}
+                  >
+                    <UserPlus size={16} /> Kết bạn
+                  </button>
+                </div>
+              )
+            )}
           </div>
         </div>
 
@@ -126,13 +244,16 @@ export const ProfileDrawer = ({ isOpen, onClose, partner, onUnfriend }) => {
           </div>
         </div>
 
-        {/* Action Button: Unfriend */}
+        {/* Xem trang cá nhân đầy đủ */}
         <button
-          onClick={() => onUnfriend(partnerId)}
+          onClick={() => {
+            navigate(`/user/${partnerId}`);
+            onClose();
+          }}
           className="btn btn-secondary"
-          style={{ width: '100%', color: 'var(--danger)', borderColor: 'var(--danger-bg)' }}
+          style={{ width: '100%', marginBottom: '4px' }}
         >
-          <UserX size={16} /> Hủy kết bạn
+          <ExternalLink size={16} /> Xem trang cá nhân
         </button>
       </div>
 

@@ -74,3 +74,215 @@
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* =========================================================
+   Modern Navbar Styles
+   ========================================================= */
+.navbar-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 72px;
+  min-height: 72px;
+  max-height: 72px;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-sizing: border-box;
+  transition: background-color 0.25s, border-color 0.25s;
+}
+
+.navbar-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.navbar-left-area {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text-main);
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.navbar-brand:hover {
+  transform: translateY(-1px);
+}
+
+.navbar-logo-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--primary-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.4);
+  flex-shrink: 0;
+}
+
+.navbar-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.navbar-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.navbar-nav-link:hover {
+  color: var(--text-main);
+  background-color: var(--bg-hover);
+}
+
+.navbar-nav-link.active {
+  color: var(--primary);
+  background-color: var(--primary-light);
+}
+
+.navbar-right-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.navbar-search-wrapper {
+  position: relative;
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.navbar-search-input-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  padding: 0 12px;
+  height: 40px;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+  box-sizing: border-box;
+}
+
+.navbar-search-input-box:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.25);
+  background-color: var(--bg-surface);
+}
+
+.navbar-mobile-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navbar-mobile-toggle:hover {
+  background-color: var(--bg-hover);
+  color: var(--primary);
+}
+
+/* Standalone Mobile Drawer (Rendered at Body level via React Portal) */
+.navbar-mobile-portal-drawer {
+  position: fixed;
+  top: 72px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(100vh - 72px);
+  width: 100vw;
+  background-color: var(--bg-app);
+  border-top: 1px solid var(--border);
+  z-index: 99999;
+  padding: 20px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  box-shadow: var(--shadow-lg);
+}
+
+/* Responsive Breakpoints — Thu gọn theo thứ tự:
+   1) đóng nav links (Trang Chủ / Khám Phá / Kiến Trúc) trước
+   2) đóng nút Mở Chat + Thông tin cá nhân
+   3) đóng ô Tìm kiếm cuối cùng */
+@media (min-width: 1280px) {
+  .navbar-nav-links {
+    display: flex !important;
+  }
+  .navbar-search-wrapper {
+    display: block !important;
+  }
+  .navbar-auth-desktop {
+    display: flex !important;
+  }
+  .navbar-mobile-toggle {
+    display: none !important;
+  }
+  .navbar-mobile-portal-drawer {
+    display: none !important;
+  }
+}
+
+/* Bước 1: thu về 1279px trở xuống -> ẩn nav links, mở hamburger */
+@media (max-width: 1279px) {
+  .navbar-nav-links {
+    display: none !important;
+  }
+  .navbar-mobile-toggle {
+    display: flex !important;
+  }
+}
+
+/* Bước 2: thu về 999px trở xuống -> ẩn cả nút Mở Chat + Thông tin cá nhân */
+@media (max-width: 999px) {
+  .navbar-auth-desktop {
+    display: none !important;
+  }
+}
+
+/* Bước 3: thu về 699px trở xuống -> cuối cùng mới ẩn ô Tìm kiếm */
+@media (max-width: 699px) {
+  .navbar-search-wrapper {
+    display: none !important;
+  }
+}

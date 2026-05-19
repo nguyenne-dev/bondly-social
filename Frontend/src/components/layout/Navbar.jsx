@@ -1,24 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { userApi } from '../../api/user.api';
 import Avatar from '../common/Avatar';
-import { 
-  Sparkles, 
+import {
   Link2,
-  MessageSquare, 
-  Compass, 
-  Cpu, 
-  Sun, 
-  Moon, 
-  LogIn, 
-  UserPlus, 
-  LogOut, 
-  ArrowRight,
+  Home,
+  Compass,
+  Cpu,
+  Sun,
+  Moon,
+  LogIn,
+  UserPlus,
+  LogOut,
+  MessageSquare,
   Search,
   Loader2,
-  UserCheck
+  X,
+  Menu,
+  Settings
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -34,6 +36,9 @@ export const Navbar = () => {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const searchContainerRef = useRef(null);
 
+  // Mobile menu open state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Close search dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -44,6 +49,24 @@ export const Navbar = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Close mobile menu and search dropdown on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setShowSearchDropdown(false);
+  }, [location.pathname]);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
 
   // Search Debounce
   useEffect(() => {
@@ -69,321 +92,494 @@ export const Navbar = () => {
   }, [searchQuery]);
 
   const navLinks = [
-    { name: 'Trang Chủ', path: '/' },
-    { name: 'Khám Phá', path: '/explore' },
-    { name: 'Kiến Trúc & Tính Năng', path: '/features' },
+    { name: 'Trang Chủ', path: '/', icon: Home },
+    { name: 'Khám Phá', path: '/explore', icon: Compass },
+    { name: 'Kiến Trúc & Tính Năng', path: '/features', icon: Cpu },
   ];
 
   const handleStartChatWithPartner = (partnerId) => {
     setShowSearchDropdown(false);
     setSearchQuery('');
+    setMobileMenuOpen(false);
     navigate(`/chat?partnerId=${partnerId}`);
   };
 
+  const handleLogout = () => {
+    logout();
+    setMobileMenuOpen(false);
+    navigate('/login');
+  };
+
   return (
-    <header
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 1000,
-        height: '84px',
-        backgroundColor: 'var(--bg-surface)',
-        borderBottom: '1px solid var(--border)',
-        backdropFilter: 'blur(16px)',
-        boxSizing: 'border-box',
-        transition: 'background-color 0.25s, border-color 0.25s',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: '1360px',
-          margin: '0 auto',
-          padding: '0 32px',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '20px',
-          boxSizing: 'border-box',
-        }}
-      >
-        {/* 1. Logo & Brand */}
-        <Link
-          to="/"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            textDecoration: 'none',
-            color: 'var(--text-main)',
-            flexShrink: 0,
-          }}
-        >
-          <div
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '14px',
-              background: 'var(--primary-gradient)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 16px rgba(6, 182, 212, 0.4)',
-              flexShrink: 0,
-            }}
-          >
-            <Link2 size={22} color="#fff" />
-          </div>
-          <div>
-            <span style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.2, display: 'block' }}>
-              Bond<span className="gradient-text">ly</span>
-            </span>
-            <span
-              style={{
-                display: 'block',
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                color: 'var(--primary)',
-                letterSpacing: '1.4px',
-                textTransform: 'uppercase',
-              }}
-            >
-              Social Network
-            </span>
-          </div>
-        </Link>
-
-        {/* 2. Center: Search Bar (when Authenticated) & Navigation Links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1, justifyContent: 'center' }}>
-          {/* Navigation Links */}
-          <nav
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-            className="desktop-nav"
-          >
-            {navLinks.map((link) => {
-              const isActive = location.pathname === link.path;
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  style={{
-                    padding: '10px 18px',
-                    borderRadius: 'var(--radius-md)',
-                    textDecoration: 'none',
-                    fontSize: '0.96rem',
-                    fontWeight: 600,
-                    color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                    backgroundColor: isActive ? 'var(--primary-light)' : 'transparent',
-                    transition: 'background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                    boxSizing: 'border-box',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Live User Search on Header (only when logged in) */}
-          {isAuthenticated && (
-            <div
-              ref={searchContainerRef}
-              style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: '320px',
-              }}
-              className="desktop-nav"
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  backgroundColor: 'var(--bg-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border)',
-                  padding: '0 14px',
-                  height: '44px',
-                  transition: 'border-color 0.2s, box-shadow 0.2s',
-                  boxShadow: showSearchDropdown ? '0 0 0 2px var(--border-focus)' : 'none',
-                }}
-              >
-                <Search size={18} color="var(--text-subtle)" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm người dùng..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setShowSearchDropdown(true);
-                  }}
-                  onFocus={() => setShowSearchDropdown(true)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    color: 'var(--text-main)',
-                    fontSize: '0.92rem',
-                    width: '100%',
-                  }}
-                />
-                {isSearching && <Loader2 size={16} className="animate-spin" color="var(--primary)" />}
+    <>
+      <header className="navbar-header">
+        <div className="navbar-container">
+          {/* 1. Left Area: Brand & Desktop Navigation Links */}
+          <div className="navbar-left-area">
+            <Link to="/" className="navbar-brand">
+              <div className="navbar-logo-icon">
+                <Link2 size={20} color="#fff" />
               </div>
-
-              {/* Floating Dropdown Results */}
-              {showSearchDropdown && searchQuery.trim().length > 0 && (
-                <div
-                  className="glass-card animate-bubble-pop"
+              <div>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, display: 'block' }}>
+                  Bond<span className="gradient-text">ly</span>
+                </span>
+                <span
                   style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 8px)',
-                    left: 0,
-                    right: 0,
-                    backgroundColor: 'var(--bg-surface)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border)',
-                    boxShadow: 'var(--shadow-lg)',
-                    maxHeight: '340px',
-                    overflowY: 'auto',
-                    zIndex: 1100,
-                    padding: '8px',
+                    display: 'block',
+                    fontSize: '0.62rem',
+                    fontWeight: 700,
+                    color: 'var(--primary)',
+                    letterSpacing: '1.2px',
+                    textTransform: 'uppercase',
                   }}
                 >
+                  Social Network
+                </span>
+              </div>
+            </Link>
+
+            {/* Desktop Navigation Links */}
+            <nav className="navbar-nav-links">
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = location.pathname === link.path;
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`navbar-nav-link ${isActive ? 'active' : ''}`}
+                  >
+                    <Icon size={16} />
+                    <span>{link.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* 2. Right Area: Search, Theme Toggle, Auth Actions & Mobile Toggle */}
+          <div className="navbar-right-area">
+            {/* Live User Search (Desktop) */}
+            {isAuthenticated && (
+              <div ref={searchContainerRef} className="navbar-search-wrapper">
+                <div className="navbar-search-input-box">
+                  <Search size={16} color="var(--text-subtle)" style={{ flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm bạn bè..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setShowSearchDropdown(true);
+                    }}
+                    onFocus={() => setShowSearchDropdown(true)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      color: 'var(--text-main)',
+                      fontSize: '0.88rem',
+                      width: '100%',
+                      minWidth: 0,
+                    }}
+                  />
                   {isSearching ? (
-                    <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-                      Đang tìm kiếm...
-                    </div>
-                  ) : searchResults.length === 0 ? (
-                    <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-                      Không tìm thấy người dùng phù hợp
-                    </div>
-                  ) : (
-                    searchResults.map((u) => (
-                      <div
-                        key={u._id}
-                        onClick={() => handleStartChatWithPartner(u._id)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '10px 12px',
-                          borderRadius: 'var(--radius-sm)',
-                          cursor: 'pointer',
-                          transition: 'background-color 0.15s ease',
-                          gap: '10px',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                          <Avatar user={u} size={34} borderRadius="10px" />
-                          <div style={{ overflow: 'hidden' }}>
-                            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {u.fullName || u.username}
-                            </div>
-                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                              @{u.username}
+                    <Loader2 size={14} className="animate-spin" color="var(--primary)" style={{ flexShrink: 0 }} />
+                  ) : searchQuery ? (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSearchResults([]);
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-subtle)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: 0,
+                      }}
+                      aria-label="Xóa từ khóa tìm kiếm"
+                    >
+                      <X size={14} />
+                    </button>
+                  ) : null}
+                </div>
+
+                {/* Floating Dropdown Results */}
+                {showSearchDropdown && searchQuery.trim().length > 0 && (
+                  <div
+                    className="glass-card animate-bubble-pop"
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 8px)',
+                      left: 0,
+                      right: 0,
+                      backgroundColor: 'var(--bg-surface)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border)',
+                      boxShadow: 'var(--shadow-lg)',
+                      maxHeight: '320px',
+                      overflowY: 'auto',
+                      zIndex: 1100,
+                      padding: '6px',
+                    }}
+                  >
+                    {isSearching ? (
+                      <div style={{ padding: '14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                        Đang tìm kiếm...
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div style={{ padding: '14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                        Không tìm thấy người dùng phù hợp
+                      </div>
+                    ) : (
+                      searchResults.map((u) => (
+                        <div
+                          key={u._id}
+                          onClick={() => handleStartChatWithPartner(u._id)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 10px',
+                            borderRadius: 'var(--radius-sm)',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s ease',
+                            gap: '10px',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                            <Avatar user={u} size={32} borderRadius="8px" />
+                            <div style={{ overflow: 'hidden' }}>
+                              <div style={{ fontWeight: 700, fontSize: '0.86rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {u.fullName || u.username}
+                              </div>
+                              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                                @{u.username}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <button
-                          className="btn btn-primary"
-                          style={{ height: '32px', padding: '0 12px', fontSize: '0.8rem', gap: '4px', flexShrink: 0 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStartChatWithPartner(u._id);
+                          <button
+                            className="btn btn-primary"
+                            style={{ height: '30px', padding: '0 10px', fontSize: '0.78rem', gap: '4px', flexShrink: 0 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartChatWithPartner(u._id);
+                            }}
+                          >
+                            <MessageSquare size={12} />
+                            <span>Nhắn tin</span>
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="btn-icon"
+              style={{ width: '40px', height: '40px', borderRadius: '10px' }}
+              title={theme === 'dark' ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'}
+              aria-label="Chuyển đổi giao diện sáng tối"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            {/* Desktop Auth Controls */}
+            <div className="navbar-auth-desktop" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/chat"
+                    className="btn btn-primary"
+                    style={{ height: '40px', padding: '0 18px', textDecoration: 'none', fontSize: '0.9rem', gap: '6px' }}
+                  >
+                    <MessageSquare size={16} />
+                    <span>Mở Chat</span>
+                  </Link>
+
+                  <Link
+                    to="/settings"
+                    style={{
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      height: '40px',
+                      padding: '0 14px',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border)',
+                      backgroundColor: 'var(--bg-subtle)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      transition: 'border-color 0.2s, background-color 0.2s',
+                    }}
+                    title="Cài đặt tài khoản"
+                  >
+                    <Avatar user={user} size={26} borderRadius="6px" />
+                    <span style={{ maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user?.fullName || user?.username}
+                    </span>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="btn btn-ghost"
+                    style={{ height: '40px', padding: '0 16px', textDecoration: 'none', fontSize: '0.9rem' }}
+                  >
+                    <LogIn size={16} />
+                    <span>Đăng Nhập</span>
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="btn btn-primary"
+                    style={{ height: '40px', padding: '0 18px', textDecoration: 'none', fontSize: '0.9rem' }}
+                  >
+                    <UserPlus size={16} />
+                    <span>Đăng Ký</span>
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {/* Mobile Menu Hamburger Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="navbar-mobile-toggle"
+              aria-label={mobileMenuOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng'}
+              title="Menu"
+            >
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* 3. Fullscreen Mobile Menu Drawer (Rendered via Portal to Document Body) */}
+      {mobileMenuOpen &&
+        createPortal(
+          <div className="navbar-mobile-portal-drawer animate-fade-in">
+            {/* Mobile Search Bar (when logged in) */}
+            {isAuthenticated && (
+              <div style={{ position: 'relative', width: '100%' }}>
+                <div className="navbar-search-input-box" style={{ height: '46px', padding: '0 14px' }}>
+                  <Search size={18} color="var(--text-subtle)" style={{ flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm bạn bè..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      color: 'var(--text-main)',
+                      fontSize: '0.95rem',
+                      width: '100%',
+                    }}
+                  />
+                  {isSearching ? (
+                    <Loader2 size={16} className="animate-spin" color="var(--primary)" style={{ flexShrink: 0 }} />
+                  ) : searchQuery ? (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-subtle)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: 0,
+                      }}
+                      aria-label="Xóa từ khóa tìm kiếm"
+                    >
+                      <X size={16} />
+                    </button>
+                  ) : null}
+                </div>
+
+                {/* Live search results in mobile drawer */}
+                {searchQuery.trim().length > 0 && (
+                  <div
+                    className="glass-card"
+                    style={{
+                      marginTop: '8px',
+                      backgroundColor: 'var(--bg-surface)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border)',
+                      padding: '8px',
+                      maxHeight: '220px',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    {isSearching ? (
+                      <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                        Đang tìm kiếm...
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                        Không tìm thấy người dùng phù hợp
+                      </div>
+                    ) : (
+                      searchResults.map((u) => (
+                        <div
+                          key={u._id}
+                          onClick={() => handleStartChatWithPartner(u._id)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '10px 12px',
+                            borderRadius: 'var(--radius-sm)',
+                            cursor: 'pointer',
+                            gap: '10px',
                           }}
                         >
-                          <MessageSquare size={13} />
-                          <span>Nhắn tin</span>
-                        </button>
-                      </div>
-                    ))
-                  )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                            <Avatar user={u} size={32} borderRadius="8px" />
+                            <div style={{ overflow: 'hidden' }}>
+                              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {u.fullName || u.username}
+                              </div>
+                              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                @{u.username}
+                              </div>
+                            </div>
+                          </div>
+                          <button className="btn btn-primary" style={{ height: '30px', padding: '0 12px', fontSize: '0.8rem', flexShrink: 0 }}>
+                            Nhắn tin
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Navigation Links in Mobile */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '1px', paddingLeft: '4px' }}>
+                Điều Hướng Trang
+              </span>
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = location.pathname === link.path;
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '14px 16px',
+                      borderRadius: 'var(--radius-md)',
+                      textDecoration: 'none',
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      color: isActive ? 'var(--primary)' : 'var(--text-main)',
+                      backgroundColor: isActive ? 'var(--primary-light)' : 'var(--bg-surface)',
+                      border: '1px solid',
+                      borderColor: isActive ? 'var(--primary)' : 'var(--border)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Icon size={20} color={isActive ? 'var(--primary)' : 'var(--text-muted)'} />
+                    <span>{link.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Mobile Auth Actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '1px', paddingLeft: '4px' }}>
+                Tài Khoản & Hành Động
+              </span>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/chat"
+                    className="btn btn-primary"
+                    style={{ height: '48px', textDecoration: 'none', fontSize: '0.98rem', justifyContent: 'center', gap: '8px' }}
+                  >
+                    <MessageSquare size={18} />
+                    <span>Vào Màn Hình Chat</span>
+                  </Link>
+
+                  <Link
+                    to="/settings"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      borderRadius: 'var(--radius-md)',
+                      textDecoration: 'none',
+                      fontSize: '0.96rem',
+                      fontWeight: 600,
+                      color: 'var(--text-main)',
+                      backgroundColor: 'var(--bg-surface)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    <Avatar user={user} size={36} borderRadius="10px" />
+                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>{user?.fullName || user?.username}</span>
+                      <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Cài đặt hồ sơ & tùy chỉnh</span>
+                    </div>
+                    <Settings size={18} color="var(--text-subtle)" style={{ marginLeft: 'auto' }} />
+                  </Link>
+
+                  <button
+                    onClick={handleLogout}
+                    className="btn btn-ghost"
+                    style={{ height: '44px', color: 'var(--danger)', justifyContent: 'center', gap: '8px', border: '1px solid var(--border)' }}
+                  >
+                    <LogOut size={16} />
+                    <span>Đăng Xuất</span>
+                  </button>
+                </>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <Link
+                    to="/login"
+                    className="btn btn-ghost"
+                    style={{ height: '48px', textDecoration: 'none', fontSize: '0.98rem', justifyContent: 'center', border: '1px solid var(--border)' }}
+                  >
+                    <LogIn size={18} />
+                    <span>Đăng Nhập</span>
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="btn btn-primary"
+                    style={{ height: '48px', textDecoration: 'none', fontSize: '0.98rem', justifyContent: 'center' }}
+                  >
+                    <UserPlus size={18} />
+                    <span>Đăng Ký Tài Khoản</span>
+                  </Link>
                 </div>
               )}
             </div>
-          )}
-        </div>
-
-        {/* 3. Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="btn-icon"
-            style={{ width: '44px', height: '44px', borderRadius: '12px' }}
-            title={theme === 'dark' ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'}
-          >
-            {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
-          </button>
-
-          {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Link
-                to="/chat"
-                className="btn btn-primary"
-                style={{ height: '44px', padding: '0 22px', textDecoration: 'none', fontSize: '0.94rem' }}
-              >
-                <MessageSquare size={17} />
-                <span>Mở Chat</span>
-              </Link>
-
-              <Link
-                to="/settings"
-                style={{
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  height: '44px',
-                  padding: '0 16px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--bg-subtle)',
-                  color: 'var(--text-main)',
-                  fontSize: '0.92rem',
-                  fontWeight: 600,
-                  transition: 'border-color 0.2s, background-color 0.2s',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <Avatar user={user} size={30} borderRadius="8px" />
-                <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user?.fullName || user?.username}
-                </span>
-              </Link>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Link
-                to="/login"
-                className="btn btn-ghost"
-                style={{ height: '44px', padding: '0 20px', textDecoration: 'none', fontSize: '0.94rem' }}
-              >
-                <LogIn size={17} />
-                <span>Đăng Nhập</span>
-              </Link>
-              <Link
-                to="/register"
-                className="btn btn-primary"
-                style={{ height: '44px', padding: '0 22px', textDecoration: 'none', fontSize: '0.94rem' }}
-              >
-                <UserPlus size={17} />
-                <span>Đăng Ký</span>
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
+          </div>,
+          document.body
+        )}
+    </>
   );
 };
 

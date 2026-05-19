@@ -12,6 +12,7 @@ const ExplorePage = lazy(() => import('./pages/ExplorePage'));
 const FeaturesPage = lazy(() => import('./pages/FeaturesPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
@@ -97,6 +98,16 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Trang cá nhân của 1 user */}
+          <Route
+            path="/user/:id"
+            element={
+              <ProtectedRoute>
+                <UserProfilePage />
               </ProtectedRoute>
             }
           />

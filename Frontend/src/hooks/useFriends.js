@@ -75,6 +75,19 @@ export const useFriends = () => {
     }
   }, [addToast, fetchFriendRequests]);
 
+  // Gửi lời mời kết bạn (dùng chung ở nhiều nơi: drawer, chat...)
+  const handleSendFriendRequest = useCallback(async (receiverId) => {
+    try {
+      await friendApi.send(receiverId);
+      addToast('Đã gửi lời mời kết bạn!', 'success');
+      fetchFriendRequests();
+      return true;
+    } catch (err) {
+      addToast(err.message || 'Không thể gửi lời mời kết bạn', 'error');
+      return false;
+    }
+  }, [addToast, fetchFriendRequests]);
+
   useEffect(() => {
     fetchFriendRequests();
   }, [fetchFriendRequests]);
@@ -88,6 +101,7 @@ export const useFriends = () => {
     handleAcceptRequest,
     handleRejectRequest,
     handleCancelRequest,
+    handleSendFriendRequest,
     executeUnfriend,
   };
 };

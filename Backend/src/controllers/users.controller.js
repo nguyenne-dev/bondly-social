@@ -5,6 +5,7 @@ const {
   searchUserService,
   updateInfoService,
   changePassService,
+  getUserByIdService,
 } = require("../services/user.service");
 const { responseOK, responseNG } = require("../utils/respone.util");
 
@@ -53,6 +54,21 @@ exports.getAllUser = async (req, res) => {
   try {
     const users = await getAllUserService(req.user._id);
     return responseOK(res, "Lấy dữ liệu thành công!", users);
+  } catch (err) {
+    return responseNG(
+      res,
+      err.message || "Server error",
+      err.statusCode || 500
+    );
+  }
+};
+
+// Lấy public profile của 1 user theo id (trang cá nhân)
+exports.getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await getUserByIdService(id, req.user._id);
+    return responseOK(res, "Lấy thông tin user thành công", user);
   } catch (err) {
     return responseNG(
       res,

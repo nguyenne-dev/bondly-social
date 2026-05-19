@@ -1,13 +1,33 @@
 const User = require("../models/users.model");
+const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
 exports.getInfoService = async (_id) => {
   const user = await User.findById(_id).select(
-    "fullName email phone gender dateOfBirth avatar bio address status"
+    "fullName username email phone gender dateOfBirth avatar bio address status"
   );
   if (!user) throw { message: "Người dùng không tồn tại", statusCode: 404 };
   return user;
+};
+
+// Lấy thông tin public profile của 1 user theo id (dùng cho trang cá nhân)
+exports.getUserByIdService = async (userId, viewerId) => {
+  if (!mongoose.isValidObjectId(userId)) {
+    throw { message: "Người dùng không tồn tại", statusCode: 404 };
+  }
+  const user = await User.findById(userId).select(
+    "fullName username email phone gender dateOfBirth avatar bio address status friends createdAt"
+  );
+  if (!user) throw { message: "Người dùng không tồn tại", statusCode: 404 };
+
+  const obj = user.toObject();
+  const friendIds = (user.friends || []).map(String);
+  // Trả trạng thái quan hệ (đã là bạn?) và số bạn bè, không lộ danh sách friends
+  obj.isFriend = viewerId ? friendIds.includes(String(viewerId)) : false;
+  obj.friendsCount = friendIds.length;
+  delete obj.friends;
+  return obj;
 };
 
 exports.getAllUserService = async (_id) => {
