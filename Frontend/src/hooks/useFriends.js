@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { friendApi } from '../api/friend.api';
 import { useToast } from '../components/common/Toast';
+import { useSocket } from '../context/SocketContext';
 
 export const useFriends = () => {
   const { addToast } = useToast();
+  const { notifyFriendRequestSent, notifyFriendRequestAccepted } = useSocket();
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [friendsList, setFriendsList] = useState([]);
@@ -34,11 +36,17 @@ export const useFriends = () => {
     try {
       await friendApi.accept(requestId);
       addToast('Đã chấp nhận lời mời kết bạn!', 'success');
+      // Người gửi (screen kia) sẽ được refresh trạng thái kết bạn realtime
+      const req = incomingRequests.find((r) => (r._id || r.id) === requestId);
+      const sender = req?.from && (req.from._id || req.from.id);
+      if (sender && req) {
+        notifyFriendRequestAccepted(sender, req);
+      }
       fetchFriendRequests();
     } catch (err) {
       addToast(err.message || 'Lỗi khi chấp nhận kết bạn', 'error');
     }
-  }, [addToast, fetchFriendRequests]);
+  }, [addToast, fetchFriendRequests, incomingRequests, notifyFriendRequestAccepted]);
 
   // Reject Friend Request
   const handleRejectRequest = useCallback(async (requestId) => {
@@ -81,12 +89,14 @@ export const useFriends = () => {
       await friendApi.send(receiverId);
       addToast('Đã gửi lời mời kết bạn!', 'success');
       fetchFriendRequests();
+      // Thông báo realtime cho người nhận (kích hoạt toast + badge lời mời)
+      notifyFriendRequestSent(receiverId);
       return true;
     } catch (err) {
       addToast(err.message || 'Không thể gửi lời mời kết bạn', 'error');
       return false;
     }
-  }, [addToast, fetchFriendRequests]);
+  }, [addToast, fetchFriendRequests, notifyFriendRequestSent]);
 
   useEffect(() => {
     fetchFriendRequests();

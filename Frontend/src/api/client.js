@@ -39,6 +39,13 @@ export class ApiClient {
 
     try {
       const response = await fetch(url, config);
+
+      // Token hết hạn / không hợp lệ -> xóa phiên và thông báo cho app đăng xuất
+      if (response.status === 401) {
+        localStorage.removeItem('bondly_token');
+        window.dispatchEvent(new Event('bondly_unauthorized'));
+      }
+
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {

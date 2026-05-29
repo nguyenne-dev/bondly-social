@@ -24,7 +24,7 @@ export const LoginPage = () => {
       setLoading(true);
       await login(account.trim(), password);
       addToast('Đăng nhập thành công!', 'success');
-      navigate('/');
+      navigate('/chat');
     } catch (err) {
       addToast(err.message || 'Đăng nhập thất bại', 'error');
     } finally {

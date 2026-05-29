@@ -4,6 +4,22 @@ const Message = require('../models/message.model');
 const User = require('../models/users.model');
 
 class ChatService {
+  // Kiểm tra user có phải thành viên của cuộc trò chuyện hay không
+  // (ngăn chặn IDOR: truy cập trực tiếp bằng conversationId/messageId của người khác)
+  async assertParticipant(userId, conversationId) {
+    const conversation = await Conversation.findById(conversationId).select('participants');
+    if (!conversation) {
+      throw new Error('Cuộc trò chuyện không tồn tại');
+    }
+    const isMember = conversation.participants.some(
+      (p) => p.toString() === userId.toString()
+    );
+    if (!isMember) {
+      throw new Error('Bạn không phải thành viên của cuộc trò chuyện này');
+    }
+    return conversation;
+  }
+
   // Tìm cuộc hội thoại giữa 2 user nếu đã tồn tại
   async findConversation(userId, partnerId) {
     const conversation = await Conversation.findOne({
@@ -57,6 +73,10 @@ class ChatService {
   // và không ổn định khi nhiều tin trùng createdAt).
   // Cursor có dạng "<createdAt ISO>|<_id>", trỏ tới tin cũ nhất của trang đã tải.
   async getConversationMessages(conversationId, limit = 100, cursor = null, userId = null) {
+    // Chỉ thành viên của cuộc trò chuyện mới được đọc tin nhắn
+    if (userId) {
+      await this.assertParticipant(userId, conversationId);
+    }
     const query = { conversationId };
     if (userId) {
       query.deletedFor = { $ne: userId };
@@ -143,6 +163,7 @@ class ChatService {
 
   // Đánh dấu đã đọc tin nhắn
   async markMessagesAsRead(conversationId, userId) {
+    const conversation = await this.assertParticipant(userId, conversationId);
     const readAt = new Date();
 
     const updateResult = await Message.updateMany(
@@ -157,7 +178,6 @@ class ChatService {
     );
 
     // Reset unread count cho user trong conversation
-    const conversation = await Conversation.findById(conversationId);
     if (conversation && conversation.unreadCounts) {
       conversation.unreadCounts.set(userId.toString(), 0);
       await conversation.save();
@@ -166,6 +186,11 @@ class ChatService {
     return {
       readCount: updateResult.modifiedCount,
       readAt,
+      // Danh sách participant để socket gửi read receipt đúng người
+      // (không tin tưởng senderId do client gửi lên)
+      participantIds: (conversation.participants || [])
+        .map((p) => p.toString())
+        .filter((id) => id !== userId.toString()),
     };
   }
 
@@ -194,6 +219,8 @@ class ChatService {
       throw new Error('Tin nhắn không tồn tại');
     }
 
+    await this.assertParticipant(userId, message.conversationId);
+
     if (!message.deletedFor) {
       message.deletedFor = [];
     }
@@ -215,6 +242,8 @@ class ChatService {
       throw new Error('Tin nhắn không tồn tại');
     }
 
+    await this.assertParticipant(userId, message.conversationId);
+
     if (message.deletedFor && message.deletedFor.length > 0) {
       const userIdStr = userId.toString();
       message.deletedFor = message.deletedFor.filter((id) => id.toString() !== userIdStr);
@@ -230,6 +259,8 @@ class ChatService {
     if (!message) {
       throw new Error('Tin nhắn không tồn tại');
     }
+
+    await this.assertParticipant(userId, message.conversationId);
 
     const existingReactionIndex = message.reactions.findIndex(
       (r) => r.userId.toString() === userId.toString()

@@ -3,6 +3,15 @@ const bcrypt = require("bcrypt");
 const User = require("../models/users.model.js");
 const sendMail = require("../utils/sendMail.js");
 
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("Thiếu biến môi trường JWT_SECRET");
+}
+
+// Bắt buộc JWT_SECRET phải được khai báo, không dùng fallback hardcode trong source
+const getAuthToken = (payload) =>
+  jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
+
 const loginService = async (accountOrUsername, password) => {
   const fUser = await User.findOne({
     $or: [
@@ -20,11 +29,11 @@ const loginService = async (accountOrUsername, password) => {
     throw { message: "Mật khẩu không đúng!", statusCode: 401 };
   }
 
-  const token = jwt.sign(
-    { _id: fUser._id, username: fUser.username, email: fUser.email },
-    process.env.JWT_SECRET || "bondly_super_secret_jwt_key_2026",
-    { expiresIn: "30d" }
-  );
+  const token = getAuthToken({
+    _id: fUser._id,
+    username: fUser.username,
+    email: fUser.email,
+  });
 
   const user = fUser.toObject();
   delete user.password;
@@ -117,7 +126,16 @@ const verifyOtpCodeService = async (email, otp) => {
     return { message: "Tài khoản đã được kích hoạt trước đó.", user };
   }
 
-  if (user.otp !== otp && otp !== '123456') {
+  // Mã OTP chỉ có hiệu lực trong 10 phút kể từ khi phát sinh
+  const OTP_TTL_MS = 10 * 60 * 1000;
+  if (!user.otpAt || new Date() - new Date(user.otpAt) > OTP_TTL_MS) {
+    user.otp = undefined;
+    user.otpAt = undefined;
+    await user.save();
+    throw { message: "Mã OTP không chính xác hoặc đã hết hạn", statusCode: 400 };
+  }
+
+  if (user.otp !== otp) {
     throw { message: "Mã OTP không chính xác hoặc đã hết hạn", statusCode: 400 };
   }
 
@@ -126,11 +144,11 @@ const verifyOtpCodeService = async (email, otp) => {
   user.otpAt = undefined;
   await user.save();
 
-  const token = jwt.sign(
-    { _id: user._id, username: user.username, email: user.email },
-    process.env.JWT_SECRET || "bondly_super_secret_jwt_key_2026",
-    { expiresIn: "30d" }
-  );
+  const token = getAuthToken({
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+  });
 
   const userData = user.toObject();
   delete userData.password;
@@ -142,7 +160,7 @@ const verifyAndCreateUserService = async (rawToken) => {
   const token = decodeURIComponent(rawToken);
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET || "bondly_super_secret_jwt_key_2026");
+    decoded = jwt.verify(token, JWT_SECRET);
   } catch {
     throw { message: "Token không hợp lệ hoặc đã hết hạn", statusCode: 401 };
   }
@@ -168,13 +186,16 @@ const verifyAndCreateUserService = async (rawToken) => {
     };
   }
 
+  // Luôn mã hóa mật khẩu trước khi lưu (không bao giờ lưu plaintext)
+  const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+
   const newUser = await User.findOneAndUpdate(
     { email },
     {
       username,
       fullName,
       email,
-      password,
+      password: hashedPassword,
       phone,
       gender,
       dateOfBirth,
@@ -218,9 +239,11 @@ const sendResetPasswordEmailService = async (username, email) => {
   }
 
   const payload = { userId: existing._id };
-  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "15m" });
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "15m" });
 
-  const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
+  // Ưu tiên CLIENT_URL, nếu chưa khai báo thì dùng origin đầu tiên trong URL_FE
+  const feOrigin = (process.env.URL_FE || '').split(',')[0]?.trim() || 'http://localhost:5173';
+  const resetLink = `${process.env.CLIENT_URL || feOrigin}/reset-password?token=${token}`;
 
   await sendMail(
     email,
@@ -240,11 +263,7 @@ const sendResetPasswordEmailService = async (username, email) => {
 const rePassService = async (token, password) => {
   let decoded;
   try {
-    decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET ||
-        req.user.iat * 1000 < new Date(user.passwordChangedAt).getTime()
-    );
+    decoded = jwt.verify(token, JWT_SECRET);
   } catch (err) {
     throw { statusCode: 401, message: "Token không hợp lệ hoặc đã hết hạn" };
   }

@@ -1,6 +1,7 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const chatService = require('../services/chat.service');
+const FriendRequest = require('../models/friendRequest.model');
 
 // Map lưu trữ userId -> Set các socketId (để hỗ trợ 1 user mở nhiều tab)
 const userSocketMap = new Map();
@@ -15,6 +16,53 @@ const getReceiverSocketIds = (userId) => {
 // Helper lấy danh sách tất cả online userIds
 const getOnlineUserIds = () => {
   return Array.from(userSocketMap.keys());
+};
+
+// Lấy danh sách bạn bè đã kết bạn của user
+const getFriendIds = async (userId) => {
+  const userIdStr = userId.toString();
+  const requests = await FriendRequest.find({
+    $or: [{ from: userId }, { to: userId }],
+    status: 'accepted',
+  }).select('from to').lean();
+  const friendIds = new Set();
+  requests.forEach((r) => {
+    if (r.from.toString() !== userIdStr) friendIds.add(r.from.toString());
+    if (r.to.toString() !== userIdStr) friendIds.add(r.to.toString());
+  });
+  return friendIds;
+};
+
+// Broadcast trạng thái online CHỈ cho bạn bè của user (tránh lộ thông tin
+// online cho người lạ) đồng thời giữ nguyên contract get_online_users cho FE
+const broadcastOnlineToFriends = async (userId) => {
+  const onlineIds = getOnlineUserIds();
+  const targets = ['self'];
+  try {
+    const friendIds = await getFriendIds(userId);
+    targets.push(...Array.from(friendIds));
+  } catch (err) {
+    console.error('getFriendIds error:', err.message);
+  }
+
+  const seen = new Set();
+  targets.forEach((friendId) => {
+    if (friendId === 'self') {
+      getReceiverSocketIds(userId).forEach((sid) => {
+        if (!seen.has(sid)) {
+          seen.add(sid);
+          io.to(sid).emit('get_online_users', onlineIds);
+        }
+      });
+      return;
+    }
+    getReceiverSocketIds(friendId).forEach((sid) => {
+      if (!seen.has(sid)) {
+        seen.add(sid);
+        io.to(sid).emit('get_online_users', onlineIds);
+      }
+    });
+  });
 };
 
 let io = null;
@@ -70,8 +118,8 @@ const initSocket = (server) => {
 
     console.log(`🟢 User connected: ${socket.user?.username || userKey} (Socket: ${socket.id})`);
 
-    // 2. Broadcast danh sách user online cho toàn bộ client
-    io.emit('get_online_users', getOnlineUserIds());
+    // 2. Cập nhật trạng thái online cho chính user và bạn bè của user
+    broadcastOnlineToFriends(userId);
 
     // ==========================================
     // Realtime Event: Gửi tin nhắn (send_message)
@@ -158,18 +206,20 @@ const initSocket = (server) => {
 
     // ==========================================
     // Realtime Event: Đánh dấu đã đọc (read receipt)
+    // (không tin tưởng senderId từ client — xác định participant từ server)
     // ==========================================
-    socket.on('mark_as_read', async ({ conversationId, senderId }) => {
+    socket.on('mark_as_read', async ({ conversationId }) => {
       try {
         const result = await chatService.markMessagesAsRead(conversationId, userId);
 
-        // Báo cho người gửi biết tin nhắn của họ đã được xem
-        const senderSockets = getReceiverSocketIds(senderId);
-        senderSockets.forEach((sockId) => {
-          io.to(sockId).emit('messages_read_receipt', {
-            conversationId,
-            readerId: userId,
-            readAt: result.readAt,
+        // Báo cho các participant còn lại biết tin nhắn đã được xem
+        (result.participantIds || []).forEach((participantId) => {
+          getReceiverSocketIds(participantId).forEach((sockId) => {
+            io.to(sockId).emit('messages_read_receipt', {
+              conversationId,
+              readerId: userId,
+              readAt: result.readAt,
+            });
           });
         });
       } catch (err) {
@@ -274,8 +324,8 @@ const initSocket = (server) => {
         }
       }
 
-      // Broadcast danh sách online mới
-      io.emit('get_online_users', getOnlineUserIds());
+      // Cập nhật trạng thái online cho chính user và bạn bè của user
+      broadcastOnlineToFriends(userId);
     });
   });
 

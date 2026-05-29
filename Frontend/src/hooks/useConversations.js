@@ -6,10 +6,12 @@ export const useConversations = () => {
   const { addToast } = useToast();
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Fetch Conversations List
   const fetchConversations = useCallback(async () => {
     try {
+      setLoading(true);
       const res = await chatApi.getConversations();
       const data = Array.isArray(res?.data) ? res.data : [];
       setConversations(data);
@@ -17,6 +19,8 @@ export const useConversations = () => {
     } catch (err) {
       console.error('Lỗi khi tải danh sách hội thoại:', err);
       return [];
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -54,6 +58,7 @@ export const useConversations = () => {
     setConversations,
     activeConversation,
     setActiveConversation,
+    loading,
     fetchConversations,
     handleStartChatWithUser,
   };

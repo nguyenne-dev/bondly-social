@@ -145,10 +145,19 @@ SocialMedia/
 | Phương thức | Endpoint | Mô tả |
 | :--- | :--- | :--- |
 | `POST` | `/api/auth/register` | Đăng ký tài khoản và gửi mã OTP qua email |
-| `POST` | `/api/auth/verify-email` | Xác thực mã OTP 6 số kích hoạt tài khoản |
+| `POST` | `/api/auth/verify-otp` | Xác thực mã OTP 6 số kích hoạt tài khoản |
 | `POST` | `/api/auth/login` | Đăng nhập hệ thống và cấp JWT token |
-| `GET` | `/api/auth/me` | Lấy thông tin tài khoản đang đăng nhập |
-| `POST` | `/api/auth/logout` | Đăng xuất tài khoản và xóa phiên làm việc |
+| `POST` | `/api/auth/send-repass-email` | Gửi email đặt lại mật khẩu |
+| `POST` | `/api/auth/reset-password` | Đặt lại mật khẩu mới |
+
+### 5. Tài khoản người dùng (`/api/user`)
+| Phương thức | Endpoint | Mô tả |
+| :--- | :--- | :--- |
+| `GET` | `/api/user/profile` | Lấy thông tin tài khoản đang đăng nhập |
+| `PUT` | `/api/user/update-info` | Cập nhật thông tin hồ sơ cá nhân |
+| `GET` | `/api/user/search` | Tìm kiếm người dùng theo từ khóa |
+| `GET` | `/api/user/friends` | Lấy danh sách bạn bè |
+| `GET` | `/api/user/:id` | Xem hồ sơ công khai của người dùng khác |
 
 ### 2. Quản lý Tin nhắn & Hội thoại (`/api/chat`)
 | Phương thức | Endpoint | Mô tả |
@@ -160,6 +169,7 @@ SocialMedia/
 | `PUT` | `/api/chat/messages/read/:conversationId` | Đánh dấu đã đọc tất cả tin nhắn trong hội thoại |
 | `PUT` | `/api/chat/messages/recall/:messageId` | Thu hồi tin nhắn với tất cả mọi người (`deletedAll`) |
 | `DELETE` | `/api/chat/messages/delete-for-me/:messageId` | Xóa tin nhắn một bên ở phía người dùng (`deletedFor`) |
+| `PUT` | `/api/chat/messages/undo-delete/:messageId` | Hoàn tác xóa tin nhắn một bên |
 | `POST` | `/api/chat/messages/react/:messageId` | Thả biểu tượng cảm xúc Emoji vào tin nhắn |
 
 ### 3. Tải Lên Đám Mây (`/api/upload`)
@@ -174,7 +184,7 @@ SocialMedia/
 | `GET` | `/api/friend-request/friends` | Lấy danh sách bạn bè hiện tại |
 | `GET` | `/api/friend-request/received` | Lấy danh sách lời mời kết bạn nhận được |
 | `GET` | `/api/friend-request/sent` | Lấy danh sách lời mời kết bạn đã gửi |
-| `POST` | `/api/friend-request/send/:receiverId` | Gửi lời mời kết bạn |
+| `POST` | `/api/friend-request/send` | Gửi lời mời kết bạn (`receiverId` trong body) |
 | `PUT` | `/api/friend-request/accept/:requestId` | Chấp nhận lời mời kết bạn |
 | `PUT` | `/api/friend-request/reject/:requestId` | Từ chối lời mời kết bạn |
 | `DELETE` | `/api/friend-request/unfriend/:friendId` | Hủy kết bạn |
@@ -193,9 +203,9 @@ JWT_SECRET=your_super_jwt_secret_key_here
 URL_FE=http://localhost:5173,https://bondly.vercel.app
 
 # Cấu hình lưu trữ đám mây Cloudinary
-CLOUD_NAME=dmjlors75
-CLOUD_API_KEY=459761311476328
-CLOUD_API_SECRET=bJv8doQTrE_4Cf6FQPe4fFm8jvw
+CLOUD_NAME=your_cloudinary_cloud_name
+CLOUD_API_KEY=your_cloudinary_api_key
+CLOUD_API_SECRET=your_cloudinary_api_secret
 
 # Cấu hình gửi mail OTP Nodemailer
 EMAIL_USER=your_email@gmail.com

@@ -39,6 +39,18 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
+  // Đăng xuất tự động khi API báo phiên không còn hợp lệ (token hết hạn giữa phiên)
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+      setToken('');
+      localStorage.removeItem('bondly_token');
+      localStorage.removeItem('bondly_user');
+    };
+    window.addEventListener('bondly_unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('bondly_unauthorized', handleUnauthorized);
+  }, []);
+
   const login = async (account, password) => {
     const res = await authApi.login({ account, password });
     if (res?.data?.token) {

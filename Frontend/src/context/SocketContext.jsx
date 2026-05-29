@@ -4,7 +4,12 @@ import { useAuth } from './AuthContext';
 
 const SocketContext = createContext(null);
 
-const SOCKET_URL = 'https://bondly-social.onrender.com';
+// Ưu tiên VITE_SOCKET_URL; nếu chưa khai báo thì suy ra từ VITE_API_URL
+// (trỏ cùng host với backend, tránh hardcode domain production khi demo local)
+const apiUrl = import.meta.env.VITE_API_URL || '';
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL ||
+  (apiUrl ? apiUrl.replace(/\/api\/?$/, '') : 'http://localhost:3002');
 
 // Sound effect for new messages using Web Audio API (zero external assets needed)
 const playNotificationSound = () => {
@@ -154,9 +159,9 @@ export const SocketProvider = ({ children }) => {
     }
   };
 
-  const markAsReadSocket = (conversationId, senderId) => {
+  const markAsReadSocket = (conversationId) => {
     if (socket && isConnected) {
-      socket.emit('mark_as_read', { conversationId, senderId });
+      socket.emit('mark_as_read', { conversationId });
     }
   };
 
@@ -169,6 +174,19 @@ export const SocketProvider = ({ children }) => {
   const reactMessageSocket = (payload, callback) => {
     if (socket && isConnected) {
       socket.emit('react_message', payload, callback);
+    }
+  };
+
+  // Thông báo realtime cho người nhận khi gửi / chấp nhận lời mời kết bạn
+  const notifyFriendRequestSent = (receiverId, requestData) => {
+    if (socket && isConnected) {
+      socket.emit('friend_request_sent', { receiverId, requestData });
+    }
+  };
+
+  const notifyFriendRequestAccepted = (senderId, newFriend) => {
+    if (socket && isConnected) {
+      socket.emit('friend_request_accepted', { senderId, newFriend });
     }
   };
 
@@ -185,6 +203,8 @@ export const SocketProvider = ({ children }) => {
         markAsReadSocket,
         recallMessageSocket,
         reactMessageSocket,
+        notifyFriendRequestSent,
+        notifyFriendRequestAccepted,
         // Handlers setters
         setOnReceiveMessage: (fn) => { onReceiveMessageRef.current = fn; },
         setOnConversationUpdated: (fn) => { onConversationUpdatedRef.current = fn; },

@@ -8,19 +8,23 @@ const http = require("http");
 // Khởi tạo Express App
 const app = express();
 app.use(cookieParser());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-const allowedOrigins = process.env.URL_FE
+const allowedOrigins = (process.env.URL_FE || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Cho phép requests không có origin (như mobile apps hoặc curl) hoặc thuộc whitelist
+      // Cho phép requests không có origin (curl, mobile) hoặc thuộc whitelist,
+      // từ chối mọi origin không được khai báo trong URL_FE
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(null, true); // Trong môi trường dev cho phép kết nối
+      return callback(new Error('Origin không được phép bởi CORS'));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

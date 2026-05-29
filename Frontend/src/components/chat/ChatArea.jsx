@@ -122,12 +122,14 @@ export const ChatArea = ({
     onLoadMoreMessages(conversation?._id);
   };
 
-  // Mark as read when entering conversation
+  // Mark as read when entering conversation (chạy 1 lần mỗi tin mới nhất,
+// tránh spam socket trên mỗi render do typing / state thay đổi)
+  const latestMessageId = messages.length > 0 ? messages[messages.length - 1]._id : null;
   useEffect(() => {
     if (conversation?._id && partnerId) {
-      markAsReadSocket(conversation._id, partnerId);
+      markAsReadSocket(conversation._id);
     }
-  }, [conversation?._id, messages.length]);
+  }, [conversation?._id, latestMessageId]);
 
   if (!conversation) {
     return <ChatEmptyState />;
