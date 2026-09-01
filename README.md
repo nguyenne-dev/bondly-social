@@ -14,7 +14,17 @@
 
 ---
 
+## 🚀 Demo & Deploy
+
+| Thành phần | Link |
+| :--- | :--- |
+| **Frontend (Vercel)** | [https://bondly-social.vercel.app](https://bondly-social.vercel.app) |
+| **Backend API (Render)** | [https://bondly-social.onrender.com](https://bondly-social.onrender.com) |
+
+---
+
 ## 📑 Mục Lục
+0. [🚀 Demo & Deploy](#-demo--deploy)
 1. [🌟 Tính Năng Nổi Bật](#-tính-năng-nổi-bật)
 2. [🏗️ Kiến Trúc Hệ Thống](#️-kiến-trúc-hệ-thống)
 3. [🛠️ Công Nghệ Sử Dụng](#️-công-nghệ-sử-dụng)
@@ -200,7 +210,7 @@ MONGO_URL=mongodb+srv://<username>:<password>@cluster0.mongodb.net/community_db
 JWT_SECRET=your_super_jwt_secret_key_here
 
 # Cho phép kết nối CORS từ Frontend (có thể ngăn cách bằng dấu phẩy)
-URL_FE=http://localhost:5173,https://bondly.vercel.app
+URL_FE=http://localhost:5173,https://bondly-social.vercel.app
 
 # Cấu hình lưu trữ đám mây Cloudinary
 CLOUD_NAME=your_cloudinary_cloud_name
